@@ -7,9 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patient Education Assembler
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FF60F09E-2461-42CE-821B-F56A7405379C}"
 	ProjectSection(SolutionItems) = preProject
-		BetterHealthChannel.xml = BetterHealthChannel.xml
-		RoyalChildrensHospital-KidsInfo.xml = RoyalChildrensHospital-KidsInfo.xml
+		LICENSE = LICENSE
+		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default Content", "Default Content", "{0AD42B68-5EAD-48FA-A3E8-F10521A955CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
