@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Derived using MOSO Xmplify 1.8.3 by Hamish Rodda on 2018-10-12 00:05:21 +0000 -->
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' elementFormDefault='qualified'>
+    <xs:element name='CustomPatientEducation'>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref='ContentProvider'/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='ContentProvider'>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref='Bundle'/>
+            </xs:sequence>
+            <xs:attribute name='name' use='required'/>
+            <xs:attribute name='url' use='required' type='xs:anyURI'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Bundle'>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref='Document'/>
+            </xs:sequence>
+            <xs:attribute name='name' use='required'/>
+            <xs:attribute name='subIndexXPath'/>
+            <xs:attribute name='url' use='required' type='xs:anyURI'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Document'>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs='unbounded' ref='Image'/>
+                <xs:element ref='Title'/>
+                <xs:element minOccurs='0' ref='Synonym'/>
+                <xs:choice maxOccurs='unbounded'>
+                    <xs:element ref='Content'/>
+                    <xs:element ref='Node'/>
+                </xs:choice>
+            </xs:sequence>
+            <xs:attribute name='synonymRegExp'/>
+            <xs:attribute name='urlXPath' use='required'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Title'>
+        <xs:complexType>
+            <xs:attribute name='nodeXPath' use='required'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Synonym'>
+        <xs:complexType>
+            <xs:attribute name='nodesXPath' use='required'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Content'>
+        <xs:complexType>
+            <xs:attribute name='nodeXPath' use='required'/>
+            <xs:attribute name='required' type='xs:NCName'/>
+            <xs:attribute name='style'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Node'>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref='Heading'/>
+                <xs:element ref='Image'/>
+            </xs:sequence>
+            <xs:attribute name='nodeXPath' use='required'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Heading'>
+        <xs:complexType>
+            <xs:attribute name='nodeXPath' use='required'/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name='Image'>
+        <xs:complexType>
+            <xs:attribute name='align' type='xs:NCName'/>
+            <xs:attribute name='nodeXPath'/>
+            <xs:attribute name='urlXPath'/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

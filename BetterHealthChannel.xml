@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CustomPatientEducation>
+  <ContentProvider name="Department of Health and Human Services" url="https://www.betterhealth.vic.gov.au">
+    <Bundle name="Better Health Channel"
+            url="https://www.betterhealth.vic.gov.au/a-zofhealthcontent?ps=10000&amp;pn=1&amp;s=az&amp;f=201259CD997C4AF1A3C48062E8ABACDC_A"
+            subIndexXPath="//div[@class='search-facet-content ec-content']//a">
+      <Document urlXPath="//ol[@class = 'listing cf']/li/a">
+        <Image urlXPath="//img[@class = 'doh-logo']" align="right"/>
+        <Image urlXPath="//img[@class = 'bhc-logo']"/>
+        <Title nodeXPath="//h1[@id = 'phbody_1_ctl01_h1Title']"/>
+        <Synonym nodesXPath="//div[contains(@class, 'm-also-called')]//li"/>
+        <Content nodeXPath="//div[contains(@class, 'm-key-messages')]"/>
+        <Content required="true" nodeXPath="//div[@id = 'phbody_1_phcontentbody_2_pnl']"/>
+        <Node nodeXPath="//div[contains(@class, 'm-content-partner')]">
+          <Heading nodeXPath="//p[@class = 'partner-title intro']"/>
+          <Image nodeXPath="//div[@class = 'partner-logo']//img"/>
+        </Node>
+        <Content nodeXPath="//p[@class = 'partner-meta']"/>
+        <Content style="Subtle Emphasis" nodeXPath="//p[@class = 'partner-description']"/>
+      </Document>
+    </Bundle>
+  </ContentProvider>
+</CustomPatientEducation>
