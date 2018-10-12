@@ -37,6 +37,9 @@ namespace Patient_Education_Assembler
             setOutputDirectory(Properties.Settings.Default.OutputDirectory);
             ShowWord.IsChecked = Properties.Settings.Default.AlwaysShowWord;
 
+            // Connect the education collection (all education documents) to the data grid
+            MainWindow.thisWindow.EducationItemsDataGrid.ItemsSource = HTMLContentProvider.getEducationCollection();
+
             if (MessageBox.Show("Please ensure that you have the appropriate permission(s) from the content provider before you run this tool to download information from the internet",
                 "Patient Education Assembler", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.Cancel)
                 Application.Current.Shutdown();
@@ -59,7 +62,6 @@ namespace Patient_Education_Assembler
             {
                 currentProvider = new HTMLContentProvider(new Uri("file://" + SpecificationFileName.Text));
                 currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
-                EducationItemsDataGrid.DataContext = currentProvider.getEducationCollection();
             }
         }
 

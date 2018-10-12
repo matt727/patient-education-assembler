@@ -17,6 +17,7 @@ namespace Patient_Education_Assembler
         PatientEducationCollection()
         {
             educationCollection = new ObservableCollection<HTMLDocument>();
+            MainWindow.thisWindow.EducationItemsDataGrid.DataContext = educationCollection;
         }
     }
 }

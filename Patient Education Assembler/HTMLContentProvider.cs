@@ -10,7 +10,6 @@ using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Data.OleDb;
-using System.Xml.Linq;
 using System.Xml.XPath;
 
 namespace Patient_Education_Assembler
@@ -37,14 +36,17 @@ namespace Patient_Education_Assembler
             if (educationObjects == null) 
                 educationObjects = new Dictionary<Uri, HTMLDocument>();
 
-            if (educationCollection == null)
-                educationCollection = new ObservableCollection<HTMLDocument>();
+            // make sure there is an education collection
+            getEducationCollection();
 
             sourceXML = sourceXMLFile;
         }
 
-        public ObservableCollection<HTMLDocument> getEducationCollection()
+        public static ObservableCollection<HTMLDocument> getEducationCollection()
         {
+            if (educationCollection == null)
+                educationCollection = new ObservableCollection<HTMLDocument>();
+
             return educationCollection;
         }
 
