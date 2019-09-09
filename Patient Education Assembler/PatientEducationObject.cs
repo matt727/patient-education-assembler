@@ -7,12 +7,23 @@ using Word = Microsoft.Office.Interop.Word;
 using QRCoder;
 using System.Data.OleDb;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Patient_Education_Assembler
 {
     public abstract class PatientEducationObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged<T>([CallerMemberName]string caller = null)
+        {
+            // make sure only to call this if the value actually changes
+
+            var handler = PropertyChanged;
+            if (handler != null)
+            {
+                handler(this, new PropertyChangedEventArgs(caller));
+            }
+        }
 
         public static String baseFileName()
         {
@@ -58,7 +69,52 @@ namespace Patient_Education_Assembler
 
         public string FileName;
         public String Title { get; set; }
-        public bool LoadSucceeded { get; set; }
+        public bool Enabled { get; set; }
+
+        public String Status {
+            get {
+                switch (LoadStatus)
+                {
+                    case LoadStatusEnum.NotLoaded:
+                        return "Not Loaded";
+                    case LoadStatusEnum.Waiting:
+                        return "Waiting to download";
+                    case LoadStatusEnum.Retrieving:
+                        return "Downloading";
+                    case LoadStatusEnum.Downloaded:
+                        return "Downloaded";
+                    case LoadStatusEnum.AccessError:
+                        return "Access Error";
+                    case LoadStatusEnum.Parsing:
+                        return "Parsing";
+                    case LoadStatusEnum.ParseError:
+                        return "Parse Error";
+                    case LoadStatusEnum.LoadedSucessfully:
+                        return "Complete";
+                    default:
+                        return "Undefined";
+                }
+            }
+        }
+
+        public enum LoadStatusEnum
+        {
+            NotLoaded,
+            Waiting,
+            Retrieving,
+            Downloaded,
+            AccessError,
+            Parsing,
+            ParseError,
+            LoadedSucessfully
+        }
+        private LoadStatusEnum currentLoadStatus;
+        public LoadStatusEnum LoadStatus { get { return currentLoadStatus; } protected set { currentLoadStatus = value; OnPropertyChanged<String>(Status); } }
+
+        public abstract void retrieveSourceDocument();
+        public abstract void parseDocument();
+
+        public String ReviewStatus { get; }
 
         public Guid ThisGUID { get; set; }
 
@@ -89,11 +145,11 @@ namespace Patient_Education_Assembler
                 GlobalDocId = Doc_ID;
         }
 
-        // New document constructor
+        // New document constructor for not previously accessed URLs
         public PatientEducationObject(Uri url)
         {
             DocumentParsed = false;
-            LoadSucceeded = true;
+            LoadStatus = LoadStatusEnum.NotLoaded;
 
             // Setup defaults and IDs for new documents
             AreaID = 1;
@@ -104,26 +160,41 @@ namespace Patient_Education_Assembler
 
             URL = url;
 
-            if (wordApp == null)
-            {
-                if ((bool)MainWindow.thisWindow.ShowWord.IsChecked)
-                    invisible = false;
-
-                wordApp = new Word.Application();
-                wordApp.Visible = !invisible;
-            }
-
             ThisGUID = Guid.NewGuid();
             FileName = ThisGUID + ".rtf";
 
             Synonyms = new Dictionary<int, string>();
+            createWordApp();
+        }
+
+        // New document constructor for index URLs
+        public PatientEducationObject(Uri url, Guid guid)
+        {
+            DocumentParsed = false;
+            LoadStatus = LoadStatusEnum.NotLoaded;
+
+            // Setup defaults and IDs for new documents
+            AreaID = 1;
+            Language_ID = 1;
+            CategoryID = 1;
+            Doc_LangID = -1;
+            Doc_ID = -1;
+
+            URL = url;
+
+            if (guid == Guid.Empty)
+                guid = Guid.NewGuid();
+            else
+                ThisGUID = guid;
+            
+            createWordApp();
         }
 
         // Database load document constructor
         public PatientEducationObject(OleDbDataReader reader)
         {
             DocumentParsed = false;
-            LoadSucceeded = true;
+            LoadStatus = LoadStatusEnum.NotLoaded;
 
             // Setup defaults and IDs for loaded documents
             AreaID = 1;
@@ -131,9 +202,22 @@ namespace Patient_Education_Assembler
             CategoryID = 1;
             Doc_LangID = reader.GetInt32((int)EducationDatabase.MetadataColumns.Doc_Lang_Id);
             Doc_ID = reader.GetInt32((int)EducationDatabase.MetadataColumns.Doc_ID);
+            Title = reader.GetString((int)EducationDatabase.MetadataColumns.Document_Name);
+            Enabled = reader.GetBoolean((int)EducationDatabase.MetadataColumns.Enabled);
 
             URL = new Uri(reader.GetString((int)EducationDatabase.MetadataColumns.URL));
+            
+            ThisGUID = new Guid(reader.GetString((int)EducationDatabase.MetadataColumns.GUID));
+            FileName = ThisGUID + ".rtf";
 
+            Synonyms = new Dictionary<int, string>();
+
+            checkGlobalIDs();
+            createWordApp();
+        }
+
+        public static void createWordApp()
+        {
             if (wordApp == null)
             {
                 if ((bool)MainWindow.thisWindow.ShowWord.IsChecked)
@@ -142,13 +226,6 @@ namespace Patient_Education_Assembler
                 wordApp = new Word.Application();
                 wordApp.Visible = !invisible;
             }
-
-            ThisGUID = new Guid(reader.GetString((int)EducationDatabase.MetadataColumns.GUID));
-            FileName = ThisGUID + ".rtf";
-
-            Synonyms = new Dictionary<int, string>();
-
-            checkGlobalIDs();
         }
 
         public void CreateDocument()

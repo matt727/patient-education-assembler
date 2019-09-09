@@ -27,9 +27,13 @@ namespace Patient_Education_Assembler
             topSpec = spec;
         }
 
-        public void loadDocument()
+        public override void parseDocument()
         {
-            LoadWeb();
+            base.parseDocument();
+
+            // Check that there is not a download or access error - we should still be parsing
+            if (LoadStatus != LoadStatusEnum.Parsing)
+                return;
 
             CreateDocument();
 
@@ -86,7 +90,7 @@ namespace Patient_Education_Assembler
                             if (boolAttribute(childNode, "required"))
                             {
                                 Console.WriteLine("No content node!");
-                                LoadSucceeded = false;
+                                LoadStatus = LoadStatusEnum.ParseError;
                                 return;
                             }
                         }

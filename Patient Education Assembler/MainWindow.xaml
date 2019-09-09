@@ -15,9 +15,9 @@
             <TextBox x:Name="CurrentContentProviderName" Height="23" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Width="218" FontWeight="Bold" Foreground="#FF204AEB" TextAlignment="Center"/>
             <Button Content="&gt;&gt;" Height="23" VerticalAlignment="Center" Width="51"/>
             <Separator Margin="0" Width="20"/>
-            <Button Content="New" Width="75" Height="23"/>
+            <Button x:Name="NewContentProvider" Content="New" Width="75" Height="23" Click="NewContentProvider_Click"/>
             <Separator Margin="0" Width="20"/>
-            <Button Content="Delete" Width="75" Height="23"/>
+            <Button Content="Delete" Width="75" Height="23" IsEnabled="False"/>
             <Separator Margin="0" Width="20"/>
             <Button Content="Start This" Width="75" Height="23"/>
             <Separator Margin="0" Width="20"/>
@@ -82,7 +82,7 @@
 
                     <Label Grid.Row="5">Your Disclaimer</Label>
 
-                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor.For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="5" Grid.Column="1"/>
+                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="5" Grid.Column="1"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Content Provider">
@@ -118,11 +118,11 @@
                         
 
                     </StackPanel>
-                    <DataGrid Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Width="803" Padding="5">
+                    <DataGrid Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Width="803" Padding="5" Margin="0,1.8,0,0">
                         <DataGrid.Columns>
-                            <DataGridCheckBoxColumn Binding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="Included"/>
-                            <DataGridTextColumn Binding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="Status"/>
-                            <DataGridTextColumn Binding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="Reviewed?"/>
+                            <DataGridCheckBoxColumn Binding="{Binding Enabled}" ClipboardContentBinding="{x:Null}" Header="Included"/>
+                            <DataGridTextColumn Binding="{Binding Status}" ClipboardContentBinding="{x:Null}" Header="Status"/>
+                            <DataGridTextColumn Binding="{Binding ReviewStatus}" ClipboardContentBinding="{x:Null}" Header="Reviewed?"/>
                             <DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Title"/>
                             <DataGridHyperlinkColumn Binding="{Binding URL}" ContentBinding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="URL"/>
                             <DataGridComboBoxColumn ClipboardContentBinding="{x:Null}" Header="Table Option" SelectedValueBinding="{x:Null}" SelectedItemBinding="{x:Null}" TextBinding="{x:Null}"/>

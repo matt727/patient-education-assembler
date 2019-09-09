@@ -13,15 +13,17 @@ namespace Patient_Education_Assembler
     {
         Dictionary<String, HTMLContentProvider> contentProviders;
         HTMLContentProvider currentProvider;
+        static OleDbConnection conn;
 
         public enum MetadataColumns
         {
-            FileName = 1,
+            FileName = 0,
             Doc_ID,
             Doc_Lang_Id,
             Document_Name,
-            Language_ID,
-            Age_ID,
+            LanguageID,
+            GenderID,
+            AgeID,
             URL,
             Enabled,
             ContentProvider,
@@ -33,44 +35,29 @@ namespace Patient_Education_Assembler
         {
             contentProviders = new Dictionary<string, HTMLContentProvider>();
         }
-
-        public void connectDatabase()
+  
+        public void addContentProvider(String providerName, HTMLContentProvider htmlContentProvider)
         {
-            OleDbConnection conn = null;
-            OleDbDataReader reader = null;
+            contentProviders.Add(providerName, htmlContentProvider);
+        }
+
+        public static void connectDatabase()
+        {   
             //try
+
+            if (conn == null)
             {
-                string accessDBLocation = MainWindow.thisWindow.OutputDirectoryPath + "\\CustomPatientEducation.mdb";
+                string accessDBLocation = MainWindow.thisWindow.OutputDirectoryPath.Text + "\\CustomPatientEducation.mdb";
                 if (File.Exists(accessDBLocation))
                 {
                     conn = new OleDbConnection(
                         "Provider=Microsoft.Jet.OLEDB.4.0; " +
                         "Data Source=" + accessDBLocation);
                     conn.Open();
-
-                    OleDbCommand cmd =
-                        new OleDbCommand("Select * FROM DocumentAssemblerMetadata", conn);
-                    reader = cmd.ExecuteReader();
-
-
-                    List<String> missingProviders = new List<string>();
-                    while (reader.Read())
-                    {
-                        String providerName = reader.GetString((int)MetadataColumns.ContentProvider);
-                        HTMLContentProvider provider = contentProviders[providerName];
-                        if (provider == null)
-                        {
-                            if (missingProviders.Contains(providerName))
-                            {
-                                MessageBox.Show("No provider specification loaded for database object:", "Database load error", MessageBoxButton.OK);
-                                missingProviders.Add(providerName);
-                            }
-                            
-                            continue;
-                        }
-
-                        provider.loadDocument(reader);
-                    }
+                }
+                else
+                {
+                    MessageBox.Show("Unable to locate access database at path: " + accessDBLocation, "Database load error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             //        catch (Exception e)
@@ -84,6 +71,49 @@ namespace Patient_Education_Assembler
             //    if (conn != null) conn.Close();
             }
 
+        }
+
+        public void preloadAllDocuments()
+        {
+            using (OleDbDataReader reader = runQuery("Select * FROM DocumentAssemblerMetadata"))
+            {
+                List<String> missingProviders = new List<string>();
+                while (reader.Read())
+                {
+                    String providerName = reader.GetString((int)MetadataColumns.ContentProvider);
+
+                    if (!contentProviders.ContainsKey(providerName))
+                    {
+                        if (!missingProviders.Contains(providerName))
+                        {
+                            MessageBox.Show("No provider specification loaded for database object:" + providerName, "Database load error", MessageBoxButton.OK);
+                            missingProviders.Add(providerName);
+                        }
+
+                        continue;
+                    }
+
+                    HTMLContentProvider provider = contentProviders[providerName];
+                    provider.loadDocument(reader);
+                }
+            }
+        }
+
+        public static OleDbDataReader runQuery(String query)
+        {
+            OleDbCommand cmd = new OleDbCommand(query, conn);
+            return cmd.ExecuteReader();
+        }
+
+        public static Guid guidForURL(Uri url)
+        {
+            OleDbDataReader reader = runQuery("SELECT * FROM DocumentAssemblerMetadata WHERE URL = '" + url.ToString() + "'");
+            while (reader.Read())
+            {
+                return new Guid(reader.GetString((int)MetadataColumns.GUID));
+            }
+
+            return Guid.Empty;
         }
     }
 }

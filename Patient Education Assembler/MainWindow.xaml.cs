@@ -62,6 +62,7 @@ namespace Patient_Education_Assembler
             {
                 currentProvider = new HTMLContentProvider(new Uri("file://" + SpecificationFileName.Text));
                 currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
+                db.addContentProvider(currentProvider.contentProviderName, currentProvider);
             }
         }
 
@@ -112,8 +113,13 @@ namespace Patient_Education_Assembler
             if (db == null)
             {
                 db = new EducationDatabase();
-                db.connectDatabase();
+                EducationDatabase.connectDatabase();
             }
+        }
+
+        private void NewContentProvider_Click(object sender, RoutedEventArgs e)
+        {
+            SelectContentSpecXML_Click(sender, e);
         }
     }
 }

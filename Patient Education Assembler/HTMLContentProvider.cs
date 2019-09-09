@@ -20,7 +20,7 @@ namespace Patient_Education_Assembler
         static ObservableCollection<HTMLDocument> educationCollection;
 
         XElement providerSpecification;
-        String contentProviderName;
+        public String contentProviderName { get; set;  }
         Uri contentProviderUrl;
         Uri bundleUrl;
         Uri sourceXML;
@@ -109,15 +109,14 @@ namespace Patient_Education_Assembler
         // Handles single index pages which explode to more index pages (xpath attribute)
         private void ParseBundle(XElement node)
         {
-            HTMLBase indexDocument = new HTMLBase(new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
-            indexDocument.LoadWeb();
+            // Auto download and retrieves the index
+            HTMLBase indexDocument = new HTMLIndex(new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
             
             if (node.Attribute("subIndexXPath") != null)
             {
                 foreach (HtmlNode indexLink in indexDocument.doc.DocumentNode.SelectNodes(node.Attribute("subIndexXPath").Value.ToString()))
                 {
-                    HTMLBase subIndex = new HTMLBase(new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
-                    subIndex.LoadWeb();
+                    HTMLBase subIndex = new HTMLIndex(new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
                     ParseIndex(node, subIndex.doc);
                 }
             } else
@@ -181,19 +180,16 @@ namespace Patient_Education_Assembler
                         if (loadCount == 0)
                         {
                             loadCount++;
-                            thisPage.loadDocument();
+                            thisPage.retrieveAndParse();
                         }
 
                     } else if (currentLoadDepth == LoadDepth.Full)
                     {
                         loadCount++;
-                        thisPage.loadDocument();
+                        thisPage.retrieveAndParse();
                     }
 
-                    if (thisPage.LoadSucceeded)
-                        educationObjects.Add(link, thisPage);
-                    else
-                        educationObjects.Add(link, null);
+                    educationObjects.Add(link, thisPage);
 
                     educationCollection.Add(thisPage);
 
@@ -202,7 +198,7 @@ namespace Patient_Education_Assembler
                     thisPage = educationObjects[link];
 
                     if (!thisPage.DocumentParsed && currentLoadDepth == LoadDepth.Full)
-                        thisPage.loadDocument();
+                        thisPage.retrieveAndParse();
                 }
 
                 if (synonym.Count() > 0)

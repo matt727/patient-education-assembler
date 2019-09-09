@@ -6,7 +6,7 @@ using System.Data.OleDb;
 
 namespace Patient_Education_Assembler
 {
-    public class HTMLBase : PatientEducationObject
+    public abstract class HTMLBase : PatientEducationObject
     {
         public HtmlDocument doc;
 
@@ -15,13 +15,28 @@ namespace Patient_Education_Assembler
         {
         }
 
+        public HTMLBase(Uri uri, Guid guid)
+        : base(uri, guid)
+        {
+        }
+
         public HTMLBase(OleDbDataReader reader)
             : base(reader)
         {
         }
 
-        public void LoadWeb()
+        public void retrieveAndParse()
         {
+            retrieveSourceDocument();
+
+            if (LoadStatus == LoadStatusEnum.Downloaded)
+                parseDocument();
+        }
+
+        public override void retrieveSourceDocument()
+        {
+            LoadStatus = LoadStatusEnum.Retrieving;
+
             String cacheFN = cacheFileName("html");
 
             using (WebClient client = new WebClient())
@@ -30,10 +45,23 @@ namespace Patient_Education_Assembler
                 {
                     client.DownloadFile(URL, cacheFN);
                 }
-
-                doc = new HtmlDocument();
-                doc.Load(cacheFN, System.Text.Encoding.UTF8);
             }
+
+            LoadStatus = LoadStatusEnum.Downloaded;
+        }
+
+        public override void parseDocument()
+        {
+            LoadStatus = LoadStatusEnum.Parsing;
+
+            String cacheFN = cacheFileName("html");
+            
+            doc = new HtmlDocument();
+            doc.Load(cacheFN, System.Text.Encoding.UTF8);
+            
+            // Don't overwrite an error status
+            if (LoadStatus == LoadStatusEnum.Parsing)
+                LoadStatus = LoadStatusEnum.LoadedSucessfully;
         }
 
         public override void FinishDocument(string fontFamily = "Calibri")

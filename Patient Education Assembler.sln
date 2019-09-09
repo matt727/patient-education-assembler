@@ -12,6 +12,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default Content", "Default Content", "{0AD42B68-5EAD-48FA-A3E8-F10521A955CB}"
+	ProjectSection(SolutionItems) = preProject
+		Content Provider Specifications\BetterHealthChannel.xml = Content Provider Specifications\BetterHealthChannel.xml
+		Content Provider Specifications\RoyalChildrensHospital-KidsInfo.xml = Content Provider Specifications\RoyalChildrensHospital-KidsInfo.xml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
