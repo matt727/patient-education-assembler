@@ -27,7 +27,7 @@ namespace Patient_Education_Assembler
 
         public static String baseFileName()
         {
-            return MainWindow.thisWindow.OutputDirectoryPath.Text + "/";
+            return EducationDatabase.Self().CachePath + "/";
         }
 
         protected String rtfFileName()
@@ -50,10 +50,31 @@ namespace Patient_Education_Assembler
             return baseFileName() + "cache/";
         }
 
-        protected String cacheFileName(String extension)
+        protected virtual String cacheFileName()
         {
-            return cachePath() + ThisGUID.ToString() + "." + extension;
+            return cachePath() + ThisGUID.ToString() + "." + cacheExtension();
         }
+
+        public bool isCached()
+        {
+            return File.Exists(cacheFileName());
+        }
+
+        public DateTime cacheDate()
+        {
+            return File.GetLastWriteTime(cacheFileName());
+        }
+        
+        internal static void cleanupWord()
+        {
+            if (wordApp != null)
+            {
+                wordApp.Quit();
+                wordApp = null;
+            }
+        }
+
+        public abstract string cacheExtension();
 
         private static bool invisible = true, closeDocs = true;
 
@@ -65,18 +86,31 @@ namespace Patient_Education_Assembler
         public int Doc_ID;
 
         public Uri URL { get; set; }
-        private string cacheFN;
 
         public string FileName;
         public String Title { get; set; }
         public bool Enabled { get; set; }
 
+        public string CacheDate {
+            get {
+                if (cacheDate() > new DateTime(2016, 1, 1))
+                    return cacheDate().ToShortDateString();
+                else
+                    return "Not cached";
+            }
+        }
+
+        public bool FromDatabase { get; set; }
+
         public String Status {
             get {
                 switch (LoadStatus)
                 {
-                    case LoadStatusEnum.NotLoaded:
-                        return "Not Loaded";
+                    
+                    case LoadStatusEnum.DatabaseEntry:
+                        return "Database Entry";
+                    case LoadStatusEnum.DatabaseAndIndexMatched:
+                        return "DB + Index Entry";
                     case LoadStatusEnum.Waiting:
                         return "Waiting to download";
                     case LoadStatusEnum.Retrieving:
@@ -91,6 +125,12 @@ namespace Patient_Education_Assembler
                         return "Parse Error";
                     case LoadStatusEnum.LoadedSucessfully:
                         return "Complete";
+                    case LoadStatusEnum.NewFromWebIndex:
+                        return "New Document";
+                    case LoadStatusEnum.DocumentIgnored:
+                        return "Document Ignored";
+                    case LoadStatusEnum.RemovedByContentProvider:
+                        return "Removed by Content Provider";
                     default:
                         return "Undefined";
                 }
@@ -99,14 +139,18 @@ namespace Patient_Education_Assembler
 
         public enum LoadStatusEnum
         {
-            NotLoaded,
+            DatabaseEntry,
+            NewFromWebIndex,
+            DatabaseAndIndexMatched,
             Waiting,
             Retrieving,
             Downloaded,
             AccessError,
             Parsing,
             ParseError,
-            LoadedSucessfully
+            LoadedSucessfully,
+            DocumentIgnored,
+            RemovedByContentProvider
         }
         private LoadStatusEnum currentLoadStatus;
         public LoadStatusEnum LoadStatus { get { return currentLoadStatus; } protected set { currentLoadStatus = value; OnPropertyChanged<String>(Status); } }
@@ -121,7 +165,8 @@ namespace Patient_Education_Assembler
         public Dictionary<int, string> Synonyms { get; set; }
         public void AddSynonym(string synonym)
         {
-            Synonyms.Add(++GlobalSynonymID, synonym);
+            if (!Synonyms.ContainsValue(synonym))
+                Synonyms.Add(++GlobalSynonymID, synonym);
         }
 
         static protected Word.Application wordApp;
@@ -148,8 +193,9 @@ namespace Patient_Education_Assembler
         // New document constructor for not previously accessed URLs
         public PatientEducationObject(Uri url)
         {
+            FromDatabase = false;
             DocumentParsed = false;
-            LoadStatus = LoadStatusEnum.NotLoaded;
+            LoadStatus = LoadStatusEnum.NewFromWebIndex;
 
             // Setup defaults and IDs for new documents
             AreaID = 1;
@@ -170,8 +216,9 @@ namespace Patient_Education_Assembler
         // New document constructor for index URLs
         public PatientEducationObject(Uri url, Guid guid)
         {
+            FromDatabase = true;
             DocumentParsed = false;
-            LoadStatus = LoadStatusEnum.NotLoaded;
+            LoadStatus = LoadStatusEnum.NewFromWebIndex;
 
             // Setup defaults and IDs for new documents
             AreaID = 1;
@@ -193,15 +240,16 @@ namespace Patient_Education_Assembler
         // Database load document constructor
         public PatientEducationObject(OleDbDataReader reader)
         {
+            FromDatabase = true;
             DocumentParsed = false;
-            LoadStatus = LoadStatusEnum.NotLoaded;
+            LoadStatus = LoadStatusEnum.DatabaseEntry;
 
             // Setup defaults and IDs for loaded documents
             AreaID = 1;
             Language_ID = 1;
             CategoryID = 1;
-            Doc_LangID = reader.GetInt32((int)EducationDatabase.MetadataColumns.Doc_Lang_Id);
-            Doc_ID = reader.GetInt32((int)EducationDatabase.MetadataColumns.Doc_ID);
+            Doc_LangID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_Lang_Id);
+            Doc_ID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_ID);
             Title = reader.GetString((int)EducationDatabase.MetadataColumns.Document_Name);
             Enabled = reader.GetBoolean((int)EducationDatabase.MetadataColumns.Enabled);
 
@@ -450,7 +498,7 @@ namespace Patient_Education_Assembler
 
         protected void InsertQRCode(Uri url)
         {
-            string qrPath = cacheFileName("qr.png");
+            string qrPath = cacheFileName() + ".qr.png";
             if (!File.Exists(qrPath))
             {
                 // Generate matching QR code for this file, as we have not yet done so already
@@ -468,6 +516,19 @@ namespace Patient_Education_Assembler
             Word.InlineShape wordQR = thisDoc.InlineShapes.AddPicture(qrPath, false, true, currentRange);
             wordQR.Width = 100;
             wordQR.Height = 100;
+        }
+
+        protected void mergeWith(PatientEducationObject input)
+        {
+            // Only want to copy in new data at the index level
+            URL = input.URL;
+            Title = input.Title;
+            foreach (KeyValuePair<int, string> pair in input.Synonyms)
+                if (!Synonyms.ContainsKey(pair.Key))
+                    Synonyms.Append(pair);
+
+            // This object now has a database entry and an index entry
+            LoadStatus = LoadStatusEnum.DatabaseAndIndexMatched;
         }
     }
 }

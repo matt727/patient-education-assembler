@@ -5,35 +5,35 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Patient_Education_Assembler"
         mc:Ignorable="d"
-        Title="MainWindow" Height="707.059" Width="920.311">
+        Title="Patient Education Assembler" Height="707.059" Width="920.311">
 
     <DockPanel>
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Height="40" VerticalAlignment="Center">
             <Label Width="100" VerticalAlignment="Center" Content="Content _Provider:  "/>
 
-            <Button Content="&lt;&lt;" Height="23" VerticalAlignment="Center" Width="51"/>
+            <Button x:Name="PrevContentProvider" Content="&lt;&lt;" Height="23" VerticalAlignment="Center" Width="51" Click="PrevContentProvider_Click"/>
             <TextBox x:Name="CurrentContentProviderName" Height="23" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Width="218" FontWeight="Bold" Foreground="#FF204AEB" TextAlignment="Center"/>
-            <Button Content="&gt;&gt;" Height="23" VerticalAlignment="Center" Width="51"/>
+            <Button x:Name="NextContentProvider" Content="&gt;&gt;" Height="23" VerticalAlignment="Center" Width="51" Click="NextContentProvider_Click"/>
             <Separator Margin="0" Width="20"/>
-            <Button x:Name="NewContentProvider" Content="New" Width="75" Height="23" Click="NewContentProvider_Click"/>
+            <Button x:Name="OpenContentProvider" Content="Open" Width="75" Height="23" Click="OpenContentProvider_Click"/>
             <Separator Margin="0" Width="20"/>
-            <Button Content="Delete" Width="75" Height="23" IsEnabled="False"/>
+            <Button x:Name="StartThisButton" Content="Start This" Width="75" Height="23" Click="StartThisButton_Click" IsEnabled="False"/>
             <Separator Margin="0" Width="20"/>
-            <Button Content="Start This" Width="75" Height="23"/>
-            <Separator Margin="0" Width="20"/>
-            <Button Content="Start All" Width="75" Height="23"/>
+            <Button x:Name="StartAllButton" Content="Start All" Width="75" Height="23" Click="StartAllButton_Click" IsEnabled="False"/>
             <Separator Margin="0" Width="20"/>
             <Button Content="Stop" Width="75" Height="23" IsEnabled="False"/>
+            <Separator Margin="0" Width="20"/>
+            <Button x:Name="FinishButton" Content="Finish" Width="75" Height="23" IsEnabled="False" Margin="0,8.5"/>
         </StackPanel>
         <UniformGrid DockPanel.Dock="Bottom" Columns="4">
             <Label>Providers</Label>
             <Label>Index</Label>
             <Label>Document</Label>
             <Label>Review</Label>
-            <ProgressBar Background="#FFE76363"/>
-            <ProgressBar Background="#FFE78463"/>
-            <ProgressBar Background="#FFE7B463"/>
-            <ProgressBar Background="#FFE7D863"/>
+            <ProgressBar x:Name="ProviderProgress" Background="#FFE76363" Maximum="1" SmallChange="1" Foreground="#FF1E9834"/>
+            <ProgressBar x:Name="IndexProgress" Background="#FFE78463" Maximum="1" SmallChange="1" Foreground="#FF87D72F"/>
+            <ProgressBar x:Name="DocumentProgress" Background="#FFE7B463" Maximum="1" SmallChange="1" Foreground="#FF93D738"/>
+            <ProgressBar x:Name="ReviewProgress" Background="#FFE7D863" Maximum="1" SmallChange="1" Foreground="#FFA7E137"/>
         </UniformGrid>
         <TabControl TabStripPlacement="Left" DockPanel.Dock="Left">
             <TabItem Header="General">
@@ -58,6 +58,9 @@
                         <Button Name="SelectOutputDirectory" Click="SelectOutputDirectory_Click"  Content="Select..."/>
                         <Separator Margin="0" Width="20"/>
                         <Button Name="ConnectToDatabase" Content="Connect to Database" Click="ConnectToDatabase_Click"/>
+                        <Separator Margin="0" Width="20"/>
+                        <Label Content="Connection Status:"/>
+                        <Ellipse Name="DBStatusIndicator" Fill="red" Stroke="Black" Width="25"/>
                     </StackPanel>
 
                     <Label Content="Max Word Docs: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Grid.Column="0"/>
@@ -67,7 +70,7 @@
                     </StackPanel>
 
                     <Label Content="Word Behaviour" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="2" Grid.Column="0"/>
-                    <CheckBox Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" IsChecked="True" Checked="ShowWord_Checked"/>
+                    <CheckBox Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" Checked="ShowWord_CheckedChanged" Unchecked="ShowWord_CheckedChanged"/>
 
                     <Label Content="Review Behaviour " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="3" Grid.Column="0"/>
                     <ComboBox Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Grid.Column="1" Grid.Row="3">
@@ -78,7 +81,7 @@
                     </ComboBox>
 
                     <Label Grid.Row="4">Your Organisation</Label>
-                    <TextBox Grid.Row="4" Grid.Column="1">Eastern Health</TextBox>
+                    <TextBox x:Name="OrganisationName" Grid.Row="4" Grid.Column="1">Eastern Health</TextBox>
 
                     <Label Grid.Row="5">Your Disclaimer</Label>
 
@@ -87,38 +90,38 @@
             </TabItem>
             <TabItem Header="Content Provider">
                 <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top"/>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-                        <Label Content="XML Specification: " HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                        <TextBox Name="SpecificationFileName" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="100"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-                        <Button Name="SelectContentSpecXML" Click="SelectContentSpecXML_Click">Select</Button>
+                        <Button Name="ReloadContentSpec" IsEnabled="False">Reload Spec</Button>
                         <Separator Width="20"/>
-                        <Button Name="ReloadContentSpec" Click="ReloadContentSpec_Click">Reload Spec</Button>
+                        <Button Name="ButtonLoadIndex" Click="ButtonLoadIndex_Click" IsEnabled="False">Load Index Only</Button>
                         <Separator Width="20"/>
-                        <Button Name="ButtonLoadIndex" Click="ButtonLoadIndex_Click">Load Index Only</Button>
-                        <Separator Width="20"/>
-                        <Button Name="ButtonParseOne" Click="ButtonParseOne_Click">Parse One Document</Button>
+                        <Button Name="ButtonParseOne" Click="ButtonParseOne_Click" IsEnabled="False">Parse One Document</Button>
                         <Label Content="For full content load, select 'Start This' or 'Start All' above"/>
                     </StackPanel>
-                    
+
                     <TextBox Name="SpecificationXML" HorizontalAlignment="Left" VerticalAlignment="Top" IsReadOnly="True"/>
                 </DockPanel>
             </TabItem>
             <TabItem Header="Education Items">
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-                        <Button>Next Requiring Review</Button>
+                        <Button x:Name="ResolveIndexDiscrepanciesButton" Content="Resolve Index Discrepancies"/>
+
+
+                        <Separator Width="20" RenderTransformOrigin="-11.95,0.375"/>
+
+
+                        <Button IsEnabled="False" Content="Next Requiring Review"/>
                         <Separator Width="20"/>
-                        <Button>Review</Button>
+                        <Button IsEnabled="False" Content="Review"/>
 
                         <Separator Width="20"/>
-                        <Button>Reload</Button>
-                        <Separator Width="20"/>
-                        
+                        <Button IsEnabled="False" Content="Reload"/>
+
 
                     </StackPanel>
-                    <DataGrid Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Width="803" Padding="5" Margin="0,1.8,0,0">
+                    <DataGrid Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Binding="{Binding Enabled}" ClipboardContentBinding="{x:Null}" Header="Included"/>
                             <DataGridTextColumn Binding="{Binding Status}" ClipboardContentBinding="{x:Null}" Header="Status"/>
@@ -126,6 +129,7 @@
                             <DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Title"/>
                             <DataGridHyperlinkColumn Binding="{Binding URL}" ContentBinding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="URL"/>
                             <DataGridComboBoxColumn ClipboardContentBinding="{x:Null}" Header="Table Option" SelectedValueBinding="{x:Null}" SelectedItemBinding="{x:Null}" TextBinding="{x:Null}"/>
+                            <DataGridTextColumn Binding="{Binding CacheDate}" ClipboardContentBinding="{x:Null}" Header="Cache Date"/>
                             <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Header="Last Updated"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -144,8 +148,9 @@
                     <WebBrowser></WebBrowser>
                 </DockPanel>
             </TabItem>
+            <Label Content="Label" Height="100" Width="100"/>
         </TabControl>
-        
-        
+
+
     </DockPanel>
 </Window>

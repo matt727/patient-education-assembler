@@ -2,9 +2,11 @@
 <CustomPatientEducation>
   <ContentProvider name="Department of Health and Human Services" url="https://www.betterhealth.vic.gov.au">
     <Bundle name="Better Health Channel"
+            postfix = "Better Health Channel"
             url="https://www.betterhealth.vic.gov.au/a-zofhealthcontent?ps=10000&amp;pn=1&amp;s=az&amp;f=201259CD997C4AF1A3C48062E8ABACDC_A"
             subIndexXPath="//div[@class='search-facet-content ec-content']//a">
-      <Document urlXPath="//ol[@class = 'listing cf']/li/a">
+        <!-- Qualify for C(onditions)AndTreatments documents only -->
+      <Document urlXPath="//ol[@class = 'listing cf']/li/a[contains(@href, 'onditions')]" indexTitleXPath="./h3">
         <Image urlXPath="//img[@class = 'doh-logo']" align="right"/>
         <Image urlXPath="//img[@class = 'bhc-logo']"/>
         <Title nodeXPath="//h1[@id = 'phbody_1_ctl01_h1Title']"/>

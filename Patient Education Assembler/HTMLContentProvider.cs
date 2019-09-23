@@ -16,11 +16,10 @@ namespace Patient_Education_Assembler
 {
     public class HTMLContentProvider : INotifyPropertyChanged
     {
-        static Dictionary<Uri, HTMLDocument> educationObjects;
-        static ObservableCollection<HTMLDocument> educationCollection;
+        public XElement providerSpecification {get; protected set; }
 
-        XElement providerSpecification;
         public String contentProviderName { get; set;  }
+        public String contentBundleName { get; set; }
         Uri contentProviderUrl;
         Uri bundleUrl;
         Uri sourceXML;
@@ -29,44 +28,27 @@ namespace Patient_Education_Assembler
 
         public enum LoadDepth { Full, OneDocument, IndexOnly, TopLevel };
 
-        //Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor.For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:
-
         public HTMLContentProvider(Uri sourceXMLFile)
         {
-            if (educationObjects == null) 
-                educationObjects = new Dictionary<Uri, HTMLDocument>();
-
-            // make sure there is an education collection
-            getEducationCollection();
-
             sourceXML = sourceXMLFile;
-        }
-
-        public static ObservableCollection<HTMLDocument> getEducationCollection()
-        {
-            if (educationCollection == null)
-                educationCollection = new ObservableCollection<HTMLDocument>();
-
-            return educationCollection;
         }
 
         public void loadDocument(OleDbDataReader reader)
         {
             string bundleName = reader.GetString((int)EducationDatabase.MetadataColumns.Bundle);
-            foreach (XElement bundleSpec in providerSpecification.DescendantNodes())
+            foreach (XElement bundleSpec in providerSpecification.DescendantNodes().Where(n => n.NodeType == System.Xml.XmlNodeType.Element))
             {
                 if (bundleSpec.Name == "Bundle" && bundleSpec.Attribute("name") != null && bundleSpec.Attribute("name").Value == bundleName)
                 {
-                    HTMLDocument loadDoc = new HTMLDocument(bundleSpec, reader);
-                    educationObjects.Add(loadDoc.URL, loadDoc);
-                    educationCollection.Add(loadDoc);
+                    HTMLDocument loadDoc = new HTMLDocument(this, bundleSpec, reader);
+                    EducationDatabase.Self().EducationObjects.Add(HTMLDocument.URLForDictionary(loadDoc.URL), loadDoc);
+                    EducationDatabase.Self().EducationCollection.Add(loadDoc);
                 }
             }
         }
 
         public void loadSpecifications(LoadDepth depth = LoadDepth.Full)
         {
-
             currentLoadDepth = depth;
             loadCount = 0;
 
@@ -77,7 +59,6 @@ namespace Patient_Education_Assembler
                 XElement top = specDoc.Element("CustomPatientEducation");
                 providerSpecification = top.Element("ContentProvider");
                 contentProviderName = providerSpecification.Attribute("name").Value.ToString();
-                MainWindow.thisWindow.CurrentContentProviderName.Text = contentProviderName;
 
                 string tempUri = providerSpecification.Attribute("url").Value.ToString();
                 contentProviderUrl = new Uri(tempUri);
@@ -85,10 +66,19 @@ namespace Patient_Education_Assembler
                 if (currentLoadDepth != LoadDepth.TopLevel)
                 {
                     XElement e = providerSpecification.Element("Bundle");
-                    if (!e.IsEmpty)
+                    if (e != null)
                     {
+                        // TODO Only one bundle per provider is currently supported.
                         bundleUrl = new Uri(contentProviderUrl, e.Attribute("url").Value.ToString());
+                        contentBundleName = e.Attribute("name").Value;
+
                         ParseBundle(e);
+
+                        ResolveDiscrepancies();
+                    }
+                    else
+                    {
+                        MessageBox.Show("No content bundle found within specifications for provider " + contentProviderName, "Missing Content Bundle Definition", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             } /*catch (Exception e)
@@ -97,31 +87,31 @@ namespace Patient_Education_Assembler
             }*/
         }
 
-        public void parseSpecifications(XElement e)
+        private void ResolveDiscrepancies()
         {
-            bundleUrl = new Uri(contentProviderUrl, e.Attribute("url").Value.ToString());
-
-            foreach (XElement node in e.DescendantNodes())
-                if (node.ToString() == "Document")
-                    ParseBundle(node);
+            DiscrepancyTool tool = new DiscrepancyTool();
+            tool.SetupDiscrepancies(this);
+            tool.Show();
         }
 
         // Handles single index pages which explode to more index pages (xpath attribute)
         private void ParseBundle(XElement node)
         {
             // Auto download and retrieves the index
-            HTMLBase indexDocument = new HTMLIndex(new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
+            HTMLBase indexDocument = new HTMLIndex(this, new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
+            indexDocument.retrieveAndParse();
             
             if (node.Attribute("subIndexXPath") != null)
             {
                 foreach (HtmlNode indexLink in indexDocument.doc.DocumentNode.SelectNodes(node.Attribute("subIndexXPath").Value.ToString()))
                 {
-                    HTMLBase subIndex = new HTMLIndex(new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
-                    ParseIndex(node, subIndex.doc);
+                    HTMLBase subIndex = new HTMLIndex(this, new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
+                    subIndex.retrieveAndParse();
+                    ParseIndex(node, subIndex.doc, node.Attribute("postfix").Value);
                 }
             } else
             {
-                ParseIndex(node, indexDocument.doc);
+                ParseIndex(node, indexDocument.doc, node.Attribute("postfix").Value);
             }
         }
 
@@ -129,14 +119,22 @@ namespace Patient_Education_Assembler
         /// Iterates available links on the loaded index page
         /// </summary>
         /// <param name="node">The content loading configuration, at the level of node "Document"</param>
-        /// <param name="doc">The</param>
-        private void ParseIndex(XElement node, HtmlDocument doc)
+        /// <param name="doc">The HTML node representing the index HTML document</param>
+        private void ParseIndex(XElement node, HtmlDocument doc, string bundlePostfix)
         {
             foreach (XElement specDoc in node.Elements("Document"))
             {
-                foreach (HtmlNode document in doc.DocumentNode.SelectNodes(specDoc.Attribute("urlXPath").Value.ToString()))
-                    LoadDocument(specDoc, document);
+                HtmlNodeCollection docMatches = doc.DocumentNode.SelectNodes(specDoc.Attribute("urlXPath").Value);
+                // There may be no matching documents on an index page
+                if (docMatches != null)
+                {
+                    MainWindow.thisWindow.IndexProgress.Maximum += docMatches.Count;
+                    foreach (HtmlNode document in docMatches)
+                        LoadDocument(specDoc, document, bundlePostfix);
+                }
             }
+
+            EducationDatabase.Self().scheduleTasks();
         }
 
         /// <summary>
@@ -144,10 +142,16 @@ namespace Patient_Education_Assembler
         /// </summary>
         /// <param name="node">The content loading configuration, at the level of node "Document"</param>
         /// <param name="documentLink">The individual A-node which contains the href link</param>
-        private void LoadDocument(XElement node, HtmlNode documentLink)
+        private void LoadDocument(XElement node, HtmlNode documentLink, string bundlePostfix)
         {
             Uri link = new Uri(contentProviderUrl, documentLink.GetAttributeValue("href", ""));
+
             string title = System.Net.WebUtility.HtmlDecode(documentLink.InnerText.Trim());
+
+            // See if there is a more consise title available
+            if (node.Attribute("indexTitleXPath") != null)
+                foreach (HtmlNode titleNode in documentLink.SelectNodes(node.Attribute("indexTitleXPath").Value.ToString()))
+                    title = titleNode.InnerText.Trim();
 
             // Handle index level synonyms
             string synonym = "";
@@ -157,53 +161,68 @@ namespace Patient_Education_Assembler
                 Match m = exp.Match(title);
                 if (m.Success)
                 {
-                    synonym = m.Groups["title"].Value.Trim();
-                    title = m.Groups["synonym"].Value.Trim();
+                    synonym = m.Groups["synonym"].Value.Trim();
+                    title = m.Groups["title"].Value.Trim();
                 }
             }
 
-            //Console.WriteLine("One listing found, href {0} title {1} synonym {2}", link, title, synonym);
+            // Postfix the bundle tag to the document title
+            title += " - " + bundlePostfix;
 
-            //if (!title.Contains("Asthma"))
-            //continue;
-
-            //if (count < 10)
+            HTMLDocument thisPage;
+            if (!EducationDatabase.Self().EducationObjects.ContainsKey(HTMLDocument.URLForDictionary(link)))
             {
-                //++count;
-                HTMLDocument thisPage;
-                if (!educationObjects.ContainsKey(link))
+                thisPage = new HTMLDocument(this, node, link);
+                thisPage.Title = title;
+
+                if (currentLoadDepth == LoadDepth.OneDocument)
                 {
-                    thisPage = new HTMLDocument(node, link);
-
-                    if (currentLoadDepth == LoadDepth.OneDocument)
-                    {
-                        if (loadCount == 0)
-                        {
-                            loadCount++;
-                            thisPage.retrieveAndParse();
-                        }
-
-                    } else if (currentLoadDepth == LoadDepth.Full)
+                    if (loadCount == 0)
                     {
                         loadCount++;
-                        thisPage.retrieveAndParse();
+                        requestRetrieveAndParse(thisPage);
                     }
 
-                    educationObjects.Add(link, thisPage);
-
-                    educationCollection.Add(thisPage);
-
-                } else
+                } else if (currentLoadDepth == LoadDepth.Full)
                 {
-                    thisPage = educationObjects[link];
-
-                    if (!thisPage.DocumentParsed && currentLoadDepth == LoadDepth.Full)
-                        thisPage.retrieveAndParse();
+                    loadCount++;
+                    requestRetrieveAndParse(thisPage);
                 }
 
-                if (synonym.Count() > 0)
-                    thisPage.AddSynonym(synonym);
+                EducationDatabase.Self().EducationObjects.Add(HTMLDocument.URLForDictionary(link), thisPage);
+
+                EducationDatabase.Self().EducationCollection.Add(thisPage);
+
+            } else
+            {
+                thisPage = EducationDatabase.Self().EducationObjects[HTMLDocument.URLForDictionary(link)];
+
+                // Update the status to show it was found in the index
+                thisPage.foundInWebIndex();
+
+                // Update the link in case it has subtly changed eg. http to https, case of URL etc.
+                thisPage.URL = link;
+
+                if (currentLoadDepth == LoadDepth.Full)
+                {
+                    requestRetrieveAndParse(thisPage);
+                }
             }
+
+            if (synonym.Count() > 0)
+                thisPage.AddSynonym(synonym);
+
+            MainWindow.thisWindow.IndexProgress.Value++;
+        }
+
+        private void requestRetrieveAndParse(HTMLDocument thisPage)
+        {
+            if (thisPage.DocumentParsed || thisPage.ParseTask != null)
+                return;
+
+            MainWindow.thisWindow.DocumentProgress.Maximum++;
+            thisPage.ParseTask = new Task(() => thisPage.retrieveAndParse(MainWindow.thisWindow.ReportDocumentProgress));
+            EducationDatabase.Self().scheduleParse(thisPage);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

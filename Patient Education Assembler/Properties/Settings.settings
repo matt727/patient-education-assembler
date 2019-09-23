@@ -5,7 +5,7 @@
     <Setting Name="OutputDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="AlwaysShowWord" Type="System.Boolean" Scope="User">
+    <Setting Name="AlwaysShowWord" GenerateDefaultValueInCode="false" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>

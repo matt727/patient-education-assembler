@@ -1,0 +1,47 @@
+﻿<Window x:Class="Patient_Education_Assembler.DiscrepancyTool"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Patient_Education_Assembler"
+        mc:Ignorable="d"
+        Title="Resolve Index Discrepancies" Height="558.587" Width="901.739">
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="60"/>
+        </Grid.ColumnDefinitions>
+        <Label Content="New Documents" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top"/>
+        <Label Content="Existing, now Missing Documents" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" RenderTransformOrigin="-0.643,-4.829" Grid.Column="1"/>
+        <DataGrid x:Name="UnmatchedList" Margin="0" VerticalAlignment="Top" Grid.Row="1" SelectionChanged="UnmatchedList_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Document"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <DataGrid x:Name="ExistingList" Margin="0" VerticalAlignment="Top" Grid.Row="1" Grid.Column="1" SelectionMode="Single" SelectionChanged="ExistingList_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Document"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Column="2" Margin="0" Orientation="Vertical" VerticalAlignment="Center" Grid.RowSpan="2">
+            <Button x:Name="ReplaceDocumentButton" Content="Replace" VerticalAlignment="Top" Height="71" Click="ReplaceDocumentButton_Click" IsEnabled="False"/>
+            <Separator Height="45" Margin="0"/>
+            <Button x:Name="IncludeButton" Content="Include New" Height="66" Click="IncludeButton_Click" IsEnabled="False"/>
+            <Separator Height="45" Margin="0"/>
+            <Button x:Name="IgnoreButton" Content="Ignore" Click="IgnoreButton_Click" IsEnabled="False"/>
+        </StackPanel>
+        <Button Content="Remove All Missing" Width="125" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left"/>
+        <StackPanel x:Name="Remove_All_Existing" Grid.Column="1" Margin="0" Orientation="Horizontal" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
+            <Button x:Name="ApplyButton" Content="Apply" HorizontalAlignment="Left" Width="75" IsDefault="True" Margin="0" Click="ApplyButton_Click"/>
+            <Separator Margin="0" Width="32"/>
+            <Button x:Name="CancelButton" Content="Cancel" HorizontalAlignment="Left" Width="75" IsCancel="True" Margin="0" Click="CancelButton_Click"/>
+        </StackPanel>
+        <Button x:Name="SelectAllButton" Content="Select All" HorizontalAlignment="Left" Width="75" Grid.Row="2" Margin="0" Click="SelectAllButton_Click"/>
+    </Grid>
+</Window>

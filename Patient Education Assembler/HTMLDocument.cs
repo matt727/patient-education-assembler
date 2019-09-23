@@ -13,31 +13,39 @@ namespace Patient_Education_Assembler
     {
         XElement topSpec;
 
+        public Task ParseTask { get; internal set; }
+
         // Database load constructor
-        public HTMLDocument(XElement spec, OleDbDataReader reader)
-            : base(reader)
+        public HTMLDocument(HTMLContentProvider provider, XElement spec, OleDbDataReader reader)
+            : base(provider, reader)
         {
             topSpec = spec;
         }
 
         // New document constructor
-        public HTMLDocument(XElement spec, Uri url)
-            : base(url)
+        public HTMLDocument(HTMLContentProvider provider, XElement spec, Uri url)
+            : base(provider, url)
         {
             topSpec = spec;
+        }
+
+        public override string cacheExtension()
+        {
+            return "html";
         }
 
         public override void parseDocument()
         {
             base.parseDocument();
 
-            // Check that there is not a download or access error - we should still be parsing
-            if (LoadStatus != LoadStatusEnum.Parsing)
+            // Check that there is not a download or access error
+            if (LoadStatus != LoadStatusEnum.LoadedSucessfully)
                 return;
 
             CreateDocument();
 
             ParseNode(topSpec, doc.DocumentNode);
+            addFooter();
 
             FinishDocument();
         }
@@ -103,13 +111,26 @@ namespace Patient_Education_Assembler
                         break;
                 }
             }
+        }
 
+        internal void addFooter()
+        {
             NewParagraph("Subtle Emphasis");
-            AddText("Information in this education material was downloaded by Eastern Health from the Royal Childrens' Hospital - Kids Health Info on " + DateTime.Today.Date.ToShortDateString() + ", and may have been modified by your doctor.  For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:");
+            string footer = EducationDatabase.Self().DisclaimerFooter;
+            footer = footer.Replace("%ORGANISATION%", EducationDatabase.Self().OrganisationName);
+            footer = footer.Replace("%PROVIDER%", ParentProvider.contentProviderName + " - " + ParentProvider.contentBundleName);
+            footer = footer.Replace("%CACHEDATE%", cacheDate().ToShortDateString());
+
+            AddText(footer);
             NewParagraph();
             InsertQRCode(URL);
             NewParagraph();
             ConvertAndAddText(URL.AbsoluteUri);
+        }
+
+        internal static string URLForDictionary(Uri url)
+        {
+            return url.ToString().Substring(url.Scheme.Length).ToLower();
         }
 
         public bool boolAttribute(XElement e, string name, string trueValue = "true", bool defaultValue = false)
@@ -351,6 +372,28 @@ namespace Patient_Education_Assembler
                     break;
             }
 
+        }
+
+        internal void mergeWith(HTMLDocument input)
+        {
+            base.mergeWith(input);
+        }
+
+        internal void ignoreDocument()
+        {
+            LoadStatus = LoadStatusEnum.DocumentIgnored;
+            Enabled = false;
+        }
+
+        internal void deleteFromDatabase()
+        {
+            LoadStatus = LoadStatusEnum.RemovedByContentProvider;
+        }
+
+        internal void foundInWebIndex()
+        {
+            if (LoadStatus == LoadStatusEnum.DatabaseEntry)
+                LoadStatus = LoadStatusEnum.DatabaseAndIndexMatched;
         }
     }
 }

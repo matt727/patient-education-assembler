@@ -24,51 +24,65 @@ namespace Patient_Education_Assembler
     /// </summary>
     public partial class MainWindow : Window
     {
-        EducationDatabase db;
-        HTMLContentProvider currentProvider;
-
         public static MainWindow thisWindow;
 
         public MainWindow()
         {
             thisWindow = this;
+
             InitializeComponent();
 
             setOutputDirectory(Properties.Settings.Default.OutputDirectory);
             ShowWord.IsChecked = Properties.Settings.Default.AlwaysShowWord;
 
+            ReportDocumentProgress = new Progress<int>(completed =>
+            {
+                DocumentProgress.Value += completed;
+            });
+
             // Connect the education collection (all education documents) to the data grid
-            MainWindow.thisWindow.EducationItemsDataGrid.ItemsSource = HTMLContentProvider.getEducationCollection();
+            EducationItemsDataGrid.ItemsSource = EducationDatabase.Self().EducationCollection;
 
             if (MessageBox.Show("Please ensure that you have the appropriate permission(s) from the content provider before you run this tool to download information from the internet",
                 "Patient Education Assembler", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.Cancel)
                 Application.Current.Shutdown();
         }
 
-        private void SelectContentSpecXML_Click(object sender, RoutedEventArgs e)
+        ~MainWindow()
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            if (openFileDialog.ShowDialog() == true)
-            {
-                SpecificationFileName.Text = openFileDialog.FileName;
-                ReloadContentSpec_Click(sender, e);
-            }
+            PatientEducationObject.cleanupWord();
         }
 
-        private void ReloadContentSpec_Click(object sender, RoutedEventArgs e)
+        public Progress<int> ReportDocumentProgress { get; private set; }
+
+        private void OpenContentProvider_Click(object sender, RoutedEventArgs e)
         {
-            SpecificationXML.Text = File.ReadAllText(SpecificationFileName.Text);
-            if (currentProvider == null)
+            openContentFile();
+        }
+
+        public void openContentFile()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Patient Education Content Provider|*.xml";
+            openFileDialog.Multiselect = true;
+            if (openFileDialog.ShowDialog() == true)
             {
-                currentProvider = new HTMLContentProvider(new Uri("file://" + SpecificationFileName.Text));
-                currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
-                db.addContentProvider(currentProvider.contentProviderName, currentProvider);
+                ProviderProgress.Maximum += openFileDialog.FileNames.Length;
+                foreach (String filename in openFileDialog.FileNames)
+                {
+                    SpecificationXML.Text = File.ReadAllText(filename);
+                    HTMLContentProvider currentProvider = new HTMLContentProvider(new Uri("file://" + filename));
+                    currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
+                    ProviderProgress.Value++;
+                    EducationDatabase.Self().addContentProvider(currentProvider.contentProviderName, currentProvider);
+                    currrentProviderChanged();
+                }
             }
         }
 
         private void ButtonLoadIndex_Click(object sender, RoutedEventArgs e)
         {
-            currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.IndexOnly);
+            EducationDatabase.Self().CurrentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.IndexOnly);
         }
 
         private void SelectOutputDirectory_Click(object sender, RoutedEventArgs e)
@@ -83,6 +97,7 @@ namespace Patient_Education_Assembler
         private void setOutputDirectory(string directory)
         {
             OutputDirectoryPath.Text = directory;
+            EducationDatabase.Self().CachePath = directory;
 
             if (directory.Length > 0 && Directory.Exists(directory))
             {
@@ -99,10 +114,16 @@ namespace Patient_Education_Assembler
 
         private void ButtonParseOne_Click(object sender, RoutedEventArgs e)
         {
-            currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.OneDocument);
+            EducationDatabase.Self().DisclaimerFooter = DisclaimerTextBox.Text;
+            DisclaimerTextBox.IsEnabled = false;
+
+            EducationDatabase.Self().OrganisationName = MainWindow.thisWindow.OrganisationName.Text;
+            OrganisationName.IsEnabled = false;
+
+            EducationDatabase.Self().CurrentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.OneDocument);
         }
 
-        private void ShowWord_Checked(object sender, RoutedEventArgs e)
+        private void ShowWord_CheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.AlwaysShowWord = (bool)ShowWord.IsChecked;
             Properties.Settings.Default.Save();
@@ -110,16 +131,62 @@ namespace Patient_Education_Assembler
 
         private void ConnectToDatabase_Click(object sender, RoutedEventArgs e)
         {
-            if (db == null)
-            {
-                db = new EducationDatabase();
-                EducationDatabase.connectDatabase();
-            }
+            Parallel.Invoke(() => EducationDatabase.Self().connectDatabase());
+
+            ConnectToDatabase.IsEnabled = false;
         }
 
-        private void NewContentProvider_Click(object sender, RoutedEventArgs e)
+        private void NextContentProvider_Click(object sender, RoutedEventArgs e)
         {
-            SelectContentSpecXML_Click(sender, e);
+            EducationDatabase.Self().nextProvider();
+            currrentProviderChanged();
+        }
+
+        private void PrevContentProvider_Click(object sender, RoutedEventArgs e)
+        {
+            EducationDatabase.Self().prevProvider();
+            currrentProviderChanged();
+        }
+
+        private void currrentProviderChanged()
+        {
+            CurrentContentProviderName.Text = EducationDatabase.Self().CurrentProvider.contentProviderName;
+            SpecificationXML.Text = EducationDatabase.Self().CurrentProvider.providerSpecification.ToString();
+            ReloadContentSpec.IsEnabled = true;
+            ButtonLoadIndex.IsEnabled = true;
+            ButtonParseOne.IsEnabled = true;
+            StartThisButton.IsEnabled = true;
+            StartAllButton.IsEnabled = true;
+
+            //dv = new System.Data.DataView(HTMLContentProvider.getEducationCollection(), "");
+            //EducationItemsDataGrid.
+
+            //DataView dv;
+            //dv = new DataView(ds.Tables[0], "type = 'business' ", "type Desc", DataViewRowState.CurrentRows);
+            //dataGridView1.DataSource = dv;
+        }
+
+        private void StartThisButton_Click(object sender, RoutedEventArgs e)
+        {
+            EducationDatabase.Self().DisclaimerFooter = DisclaimerTextBox.Text;
+            DisclaimerTextBox.IsEnabled = false;
+
+            EducationDatabase.Self().OrganisationName = MainWindow.thisWindow.OrganisationName.Text;
+            OrganisationName.IsEnabled = false;
+
+            EducationDatabase.Self().CurrentProvider.loadSpecifications();
+        }
+
+        private void StartAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            EducationDatabase.Self().DisclaimerFooter = DisclaimerTextBox.Text;
+            DisclaimerTextBox.IsEnabled = false;
+
+            EducationDatabase.Self().OrganisationName = MainWindow.thisWindow.OrganisationName.Text;
+            OrganisationName.IsEnabled = false;
+
+            foreach (HTMLContentProvider provider in EducationDatabase.Self().allProviders())
+                provider.loadSpecifications();
         }
     }
 }
