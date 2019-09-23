@@ -166,7 +166,7 @@ namespace Patient_Education_Assembler
         public void AddSynonym(string synonym)
         {
             if (!Synonyms.ContainsValue(synonym))
-                Synonyms.Add(++GlobalSynonymID, synonym);
+                Synonyms.Add(EducationDatabase.Self().GetNewSynonymID(), synonym);
         }
 
         static protected Word.Application wordApp;
@@ -175,20 +175,7 @@ namespace Patient_Education_Assembler
         protected bool wantNewLine;
         protected bool wantNewParagraph;
 
-        private static int GlobalDocLangID = 1000;
-        private static int GlobalSynonymID = 1;
-        private static int GlobalDocId = 1;
-
         public bool DocumentParsed { get; set; }
-
-        private void checkGlobalIDs()
-        {
-            if (Doc_LangID > GlobalDocLangID)
-                GlobalDocLangID = Doc_LangID;
-
-            if (Doc_ID > GlobalDocId)
-                GlobalDocId = Doc_ID;
-        }
 
         // New document constructor for not previously accessed URLs
         public PatientEducationObject(Uri url)
@@ -201,8 +188,8 @@ namespace Patient_Education_Assembler
             AreaID = 1;
             Language_ID = 1;
             CategoryID = 1;
-            Doc_LangID = ++GlobalDocLangID;
-            Doc_ID = ++GlobalDocId;
+            Doc_LangID = -1;
+            Doc_ID = -1;
 
             URL = url;
 
@@ -260,7 +247,6 @@ namespace Patient_Education_Assembler
 
             Synonyms = new Dictionary<int, string>();
 
-            checkGlobalIDs();
             createWordApp();
         }
 
@@ -287,6 +273,12 @@ namespace Patient_Education_Assembler
             highlightRanges = new List<Tuple<int, int>>();
             emphasisRanges = new List<Tuple<int, int>>();
             underlineRanges = new List<Tuple<int, int>>();
+        }
+
+        internal void LoadSynonym(int synonymID, string synonym)
+        {
+            if (!Synonyms.ContainsKey(synonymID))
+                Synonyms.Add(synonymID, synonym);
         }
 
         protected static bool skipUntilNextH2 = false;

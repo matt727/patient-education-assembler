@@ -189,19 +189,21 @@ namespace Patient_Education_Assembler
                     requestRetrieveAndParse(thisPage);
                 }
 
-                EducationDatabase.Self().EducationObjects.Add(HTMLDocument.URLForDictionary(link), thisPage);
-
-                EducationDatabase.Self().EducationCollection.Add(thisPage);
+                EducationDatabase.Self().registerNewDocument(thisPage, HTMLDocument.URLForDictionary(link));
 
             } else
             {
-                thisPage = EducationDatabase.Self().EducationObjects[HTMLDocument.URLForDictionary(link)];
+                thisPage = (HTMLDocument)EducationDatabase.Self().EducationObjects[HTMLDocument.URLForDictionary(link)];
 
                 // Update the status to show it was found in the index
                 thisPage.foundInWebIndex();
 
                 // Update the link in case it has subtly changed eg. http to https, case of URL etc.
-                thisPage.URL = link;
+                if (thisPage.URL != link)
+                {
+                    EducationDatabase.Self().updateDocumentURL(thisPage, HTMLDocument.URLForDictionary(thisPage.URL), HTMLDocument.URLForDictionary(link));
+                    thisPage.URL = link;
+                }
 
                 if (currentLoadDepth == LoadDepth.Full)
                 {

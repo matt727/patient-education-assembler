@@ -29,8 +29,33 @@ namespace Patient_Education_Assembler
             return contentProviders.Values;
         }
 
-        public Dictionary<string, HTMLDocument> EducationObjects { get; private set; }
-        public ObservableCollection<HTMLDocument> EducationCollection { get; private set; }
+        // Used to check if a document with an equivalent URL exists (key = equivalent URLs (lowercase, no protocol)
+        public Dictionary<string, PatientEducationObject> EducationObjects { get; private set; }
+
+        // Used to display education documents in the UI
+        public ObservableCollection<PatientEducationObject> EducationCollection { get; private set; }
+
+        // Used to look up documents by database ID
+        Dictionary<int, PatientEducationObject> EducationObjectsByDatabaseID;
+        // Merged away documents that need to be removed from the database
+        List<PatientEducationObject> obsoleteDocuments;
+
+        private static int MaxDocLangID = 1000;
+        private static int MaxSynonymID = 1;
+        private static int MaxDocId = 1;
+
+        internal void registerNewDocument(PatientEducationObject input, string equivalentURL = null)
+        {
+            EducationObjects.Add(equivalentURL, input);
+            EducationCollection.Add(input);
+            EducationObjectsByDatabaseID.Add(input.Doc_ID, input);
+        }
+
+        internal void updateDocumentURL(HTMLDocument input, string oldEquivalentURL, string newEquivalentURL)
+        {
+            EducationObjects.Remove(oldEquivalentURL);
+            EducationObjects.Add(newEquivalentURL, input);
+        }
 
         internal void removeMergedDocument(HTMLDocument input, HTMLDocument remainingDocument)
         {
@@ -38,6 +63,8 @@ namespace Patient_Education_Assembler
             EducationObjects.Remove(HTMLDocument.URLForDictionary(input.URL));
             EducationObjects.Remove(HTMLDocument.URLForDictionary(remainingDocument.URL));
             EducationObjects.Add(HTMLDocument.URLForDictionary(input.URL), remainingDocument);
+            EducationObjectsByDatabaseID.Remove(input.Doc_ID);
+            obsoleteDocuments.Add(input);
         }
 
         public string OrganisationName { get; set; }
@@ -75,8 +102,10 @@ namespace Patient_Education_Assembler
         {
             contentProviders = new SortedList<string, HTMLContentProvider>();
             DocumentsReadyToParse = new List<HTMLDocument>();
-            EducationObjects = new Dictionary<string, HTMLDocument>();
-            EducationCollection = new ObservableCollection<HTMLDocument>();
+            EducationObjects = new Dictionary<string, PatientEducationObject>();
+            EducationCollection = new ObservableCollection<PatientEducationObject>();
+            EducationObjectsByDatabaseID = new Dictionary<int, PatientEducationObject>();
+            obsoleteDocuments = new List<PatientEducationObject>();
         }
   
         public void addContentProvider(String providerName, HTMLContentProvider htmlContentProvider)
@@ -136,8 +165,22 @@ namespace Patient_Education_Assembler
 
         }
 
+        internal int GetNewSynonymID()
+        {
+            return ++MaxSynonymID;
+        }
+
         public void preloadAllDocuments()
         {
+            // Determine database index maximums
+            using (OleDbDataReader reader = runQuery("Select MAX(Doc_ID) FROM DocumentTranslations"))
+                if (reader.Read())
+                    MaxDocId = (int)reader.GetDouble(0);
+
+            using (OleDbDataReader reader = runQuery("Select MAX(SynonymID) FROM Synonym"))
+                if (reader.Read())
+                    MaxSynonymID = (int)reader.GetDouble(0);
+
             using (OleDbDataReader reader = runQuery("Select * FROM DocumentAssemblerMetadata"))
             {
                 List<String> missingProviders = new List<string>();
@@ -174,7 +217,9 @@ namespace Patient_Education_Assembler
             {
                 while (reader.Read())
                 {
-
+                    PatientEducationObject doc;
+                    if (EducationObjectsByDatabaseID.TryGetValue((int)reader.GetInt32((int)SynonymColumns.ID), out doc))
+                        doc.LoadSynonym((int)reader.GetDouble((int)SynonymColumns.SynonymID), reader.GetString((int)EducationDatabase.SynonymColumns.Name));
                 }
             }
         }
