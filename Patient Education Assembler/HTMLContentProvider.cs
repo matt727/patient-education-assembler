@@ -14,29 +14,18 @@ using System.Xml.XPath;
 
 namespace Patient_Education_Assembler
 {
-    public class HTMLContentProvider : INotifyPropertyChanged
+    public class HTMLContentProvider : PatientEducationProvider, INotifyPropertyChanged
     {
-        public XElement providerSpecification {get; protected set; }
-
-        public String contentProviderName { get; set;  }
-        public String contentBundleName { get; set; }
-        Uri contentProviderUrl;
-        Uri bundleUrl;
-        Uri sourceXML;
-        LoadDepth currentLoadDepth;
-        int loadCount;
-
-        public enum LoadDepth { Full, OneDocument, IndexOnly, TopLevel };
 
         public HTMLContentProvider(Uri sourceXMLFile)
+            : base(sourceXMLFile)
         {
-            sourceXML = sourceXMLFile;
         }
 
         public void loadDocument(OleDbDataReader reader)
         {
             string bundleName = reader.GetString((int)EducationDatabase.MetadataColumns.Bundle);
-            foreach (XElement bundleSpec in providerSpecification.DescendantNodes().Where(n => n.NodeType == System.Xml.XmlNodeType.Element))
+            foreach (XElement bundleSpec in ProviderSpecification.DescendantNodes().Where(n => n.NodeType == System.Xml.XmlNodeType.Element))
             {
                 if (bundleSpec.Name == "Bundle" && bundleSpec.Attribute("name") != null && bundleSpec.Attribute("name").Value == bundleName)
                 {
@@ -57,15 +46,15 @@ namespace Patient_Education_Assembler
             //try
             {
                 XElement top = specDoc.Element("CustomPatientEducation");
-                providerSpecification = top.Element("ContentProvider");
-                contentProviderName = providerSpecification.Attribute("name").Value.ToString();
+                ProviderSpecification = top.Element("ContentProvider");
+                contentProviderName = ProviderSpecification.Attribute("name").Value.ToString();
 
-                string tempUri = providerSpecification.Attribute("url").Value.ToString();
+                string tempUri = ProviderSpecification.Attribute("url").Value.ToString();
                 contentProviderUrl = new Uri(tempUri);
 
                 if (currentLoadDepth != LoadDepth.TopLevel)
                 {
-                    XElement e = providerSpecification.Element("Bundle");
+                    XElement e = ProviderSpecification.Element("Bundle");
                     if (e != null)
                     {
                         // TODO Only one bundle per provider is currently supported.

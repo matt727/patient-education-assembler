@@ -131,7 +131,7 @@ namespace Patient_Education_Assembler
 
         private void ConnectToDatabase_Click(object sender, RoutedEventArgs e)
         {
-            Parallel.Invoke(() => EducationDatabase.Self().connectDatabase());
+            EducationDatabase.Self().connectDatabase();
 
             ConnectToDatabase.IsEnabled = false;
         }
@@ -151,7 +151,7 @@ namespace Patient_Education_Assembler
         private void currrentProviderChanged()
         {
             CurrentContentProviderName.Text = EducationDatabase.Self().CurrentProvider.contentProviderName;
-            SpecificationXML.Text = EducationDatabase.Self().CurrentProvider.providerSpecification.ToString();
+            SpecificationXML.Text = EducationDatabase.Self().CurrentProvider.GetSpecification();
             ReloadContentSpec.IsEnabled = true;
             ButtonLoadIndex.IsEnabled = true;
             ButtonParseOne.IsEnabled = true;
@@ -187,6 +187,11 @@ namespace Patient_Education_Assembler
 
             foreach (HTMLContentProvider provider in EducationDatabase.Self().allProviders())
                 provider.loadSpecifications();
+        }
+
+        private void FinishButton_Click(object sender, RoutedEventArgs e)
+        {
+            EducationDatabase.Self().SaveToDatabase();
         }
     }
 }

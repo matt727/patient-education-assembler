@@ -9,24 +9,22 @@ namespace Patient_Education_Assembler
     public abstract class HTMLBase : PatientEducationObject
     {
         public HtmlDocument doc;
-        public HTMLContentProvider ParentProvider { get; private set; }
+
+        public HTMLContentProvider HTMLParentProvider => (HTMLContentProvider)base.ParentProvider;
 
         public HTMLBase(HTMLContentProvider provider, Uri uri)
-            :base(uri)
+            :base(provider, uri)
         {
-            ParentProvider = provider;
         }
 
         public HTMLBase(HTMLContentProvider provider, Uri uri, Guid guid)
-        : base(uri, guid)
+        : base(provider, uri, guid)
         {
-            ParentProvider = provider;
         }
 
         public HTMLBase(HTMLContentProvider provider, OleDbDataReader reader)
-            : base(reader)
+            : base(provider, reader)
         {
-            ParentProvider = provider;
         }
 
         public void retrieveAndParse(IProgress<int> reportProgress)

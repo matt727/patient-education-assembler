@@ -8,12 +8,17 @@ using QRCoder;
 using System.Data.OleDb;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Data.SqlClient;
+using System.Data;
 
 namespace Patient_Education_Assembler
 {
     public abstract class PatientEducationObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public PatientEducationProvider ParentProvider { get; private set; }
+
         private void OnPropertyChanged<T>([CallerMemberName]string caller = null)
         {
             // make sure only to call this if the value actually changes
@@ -88,7 +93,7 @@ namespace Patient_Education_Assembler
         public Uri URL { get; set; }
 
         public string FileName;
-        public String Title { get; set; }
+        public String Title { get { return Title; } set { Title = value.Replace("(", Char.ConvertFromUtf32(0x2768)).Replace(")", Char.ConvertFromUtf32(0x2768)); } }
         public bool Enabled { get; set; }
 
         public string CacheDate {
@@ -178,8 +183,9 @@ namespace Patient_Education_Assembler
         public bool DocumentParsed { get; set; }
 
         // New document constructor for not previously accessed URLs
-        public PatientEducationObject(Uri url)
+        public PatientEducationObject(PatientEducationProvider provider, Uri url)
         {
+            ParentProvider = provider;
             FromDatabase = false;
             DocumentParsed = false;
             LoadStatus = LoadStatusEnum.NewFromWebIndex;
@@ -188,7 +194,7 @@ namespace Patient_Education_Assembler
             AreaID = 1;
             Language_ID = 1;
             CategoryID = 1;
-            Doc_LangID = -1;
+            Doc_LangID = 1; // English (default) TODO support other languages
             Doc_ID = -1;
 
             URL = url;
@@ -201,8 +207,9 @@ namespace Patient_Education_Assembler
         }
 
         // New document constructor for index URLs
-        public PatientEducationObject(Uri url, Guid guid)
+        public PatientEducationObject(PatientEducationProvider provider, Uri url, Guid guid)
         {
+            ParentProvider = provider;
             FromDatabase = true;
             DocumentParsed = false;
             LoadStatus = LoadStatusEnum.NewFromWebIndex;
@@ -211,7 +218,7 @@ namespace Patient_Education_Assembler
             AreaID = 1;
             Language_ID = 1;
             CategoryID = 1;
-            Doc_LangID = -1;
+            Doc_LangID = 1; // English (default) TODO support other languages
             Doc_ID = -1;
 
             URL = url;
@@ -225,8 +232,9 @@ namespace Patient_Education_Assembler
         }
 
         // Database load document constructor
-        public PatientEducationObject(OleDbDataReader reader)
+        public PatientEducationObject(PatientEducationProvider provider, OleDbDataReader reader)
         {
+            ParentProvider = provider;
             FromDatabase = true;
             DocumentParsed = false;
             LoadStatus = LoadStatusEnum.DatabaseEntry;
@@ -521,6 +529,104 @@ namespace Patient_Education_Assembler
 
             // This object now has a database entry and an index entry
             LoadStatus = LoadStatusEnum.DatabaseAndIndexMatched;
+        }
+
+        public virtual void SaveToDatabase(OleDbConnection conn)
+        {
+            // Always insert into metadata
+            OleDbCommand metaData = conn.CreateCommand();
+            OleDbCommand docCat = conn.CreateCommand();
+            OleDbCommand docTrans = conn.CreateCommand();
+            {
+
+                if (FromDatabase)
+                {
+                    metaData.CommandText = "UPDATE DocumentAssemblerMetadata SET " +
+                        "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
+                        "GenderID = @gender, AgeID = @age, URL = @url, Enabled = @enabled, " +
+                        "ContentProvider = @provider, Bundle = @bundle, [GUID] = @thisguid " +
+                        "WHERE Doc_ID = @doc";
+                }
+                else
+                {
+                    if (Doc_ID == -1)
+                        Doc_ID = EducationDatabase.Self().GetNewDocID();
+
+                    metaData.CommandText = "INSERT INTO DocumentAssemblerMetadata (" +
+                        "FileName, Doc_Lang_Id, Document_Name, Language_ID, " +
+                        "GenderID, AgeID, URL, Enabled, ContentProvider, Bundle, [GUID], Doc_ID" +
+                        ") " +
+                        "VALUES (@fn, @doclang, @title, @lang, " +
+                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @doc" +
+                        ")";
+                }
+
+                if (FromDatabase && Enabled)
+                {
+                    // It will be in the main tables - UPDATE.  DocCat will already be correct.
+                    docTrans.CommandText = "UPDATE DocumentTranslations SET " +
+                        "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
+                        "GenderID = @gender, AgeID = @age, URL = @url " +
+                        "WHERE Doc_ID = @doc";
+                }
+                else
+                {
+                    docCat.CommandText = "INSERT INTO DocCat (Doc_ID, CategoryID) " +
+                        "VALUES (@doc, @cat)";
+
+                    docTrans.CommandText = "INSERT INTO DocumentTranslations (" +
+                        "FileName, Doc_Lang_Id, Document_Name, Language_ID, " +
+                        "GenderID, AgeID, URL, Doc_ID" +
+                        ") " +
+                        "VALUES (@fn, @doclang, @title, @lang, " +
+                        "@gender, @age, @url, @doc" +
+                        ")";
+                }
+
+                metaData.Parameters.Add("@fn", OleDbType.VarChar, 255).Value = FileName;
+                metaData.Parameters.Add("@doclang", OleDbType.Double).Value = (double)Doc_LangID;
+                metaData.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
+                metaData.Parameters.Add("@lang", OleDbType.Double).Value = (double)Language_ID;
+                metaData.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
+                metaData.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
+                metaData.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
+                metaData.Parameters.Add("@enabled", OleDbType.Boolean).Value = Enabled;
+                metaData.Parameters.Add("@provider", OleDbType.VarChar, 255).Value = ParentProvider.contentProviderName;
+                metaData.Parameters.Add("@bundle", OleDbType.VarChar, 255).Value = ParentProvider.contentBundleName;
+                metaData.Parameters.Add("@thisguid", OleDbType.VarChar, 255).Value = ThisGUID.ToString();
+                metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+
+                metaData.ExecuteNonQuery();
+
+                if (docCat.CommandText.Length > 0)
+                {
+                    docCat.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                    docCat.Parameters.Add("@cat", OleDbType.BigInt).Value = (long)1;
+
+                    docCat.ExecuteNonQuery();
+                }
+
+                if (docTrans.CommandText.Length > 0)
+                {
+                    docTrans.Parameters.Add("@fn", OleDbType.VarChar, 255).Value = FileName;
+                    docTrans.Parameters.Add("@doclang", OleDbType.Double).Value = (double)Doc_LangID;
+                    docTrans.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
+                    docTrans.Parameters.Add("@lang", OleDbType.Double).Value = (double)Language_ID;
+                    docTrans.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
+                    docTrans.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
+                    docTrans.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
+                    docTrans.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+
+                    docTrans.ExecuteNonQuery();
+                }
+            }
+
+            /*docCatTableAdapter.Insert(obj.Doc_ID, obj.CategoryID);
+            documentTranslationsTableAdapter.Insert(obj.FileName, obj.Doc_ID, obj.Language_ID, obj.Title, obj.Language_ID, -1, -1, obj.URL.AbsoluteUri);
+            foreach (string synonym in obj.Synonyms.Values)
+            {
+                synonymTableAdapter.Insert(obj.Doc_ID, synonym);
+            }*/
         }
     }
 }

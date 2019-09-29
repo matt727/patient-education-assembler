@@ -40,15 +40,20 @@ namespace Patient_Education_Assembler
         // Merged away documents that need to be removed from the database
         List<PatientEducationObject> obsoleteDocuments;
 
-        private static int MaxDocLangID = 1000;
         private static int MaxSynonymID = 1;
         private static int MaxDocId = 1;
+
+        internal int GetNewDocID()
+        {
+            return ++MaxDocId;
+        }
 
         internal void registerNewDocument(PatientEducationObject input, string equivalentURL = null)
         {
             EducationObjects.Add(equivalentURL, input);
             EducationCollection.Add(input);
-            EducationObjectsByDatabaseID.Add(input.Doc_ID, input);
+            if (input.Doc_ID >= 0)
+                EducationObjectsByDatabaseID.Add(input.Doc_ID, input);
         }
 
         internal void updateDocumentURL(HTMLDocument input, string oldEquivalentURL, string newEquivalentURL)
@@ -241,6 +246,13 @@ namespace Patient_Education_Assembler
             return Guid.Empty;
         }
 
+        public void SaveToDatabase()
+        {
+            foreach (PatientEducationObject doc in EducationCollection)
+            {
+                doc.SaveToDatabase(conn);
+            }
+        }
 
 
         public async void scheduleTasks()

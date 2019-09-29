@@ -23,7 +23,7 @@
             <Separator Margin="0" Width="20"/>
             <Button Content="Stop" Width="75" Height="23" IsEnabled="False"/>
             <Separator Margin="0" Width="20"/>
-            <Button x:Name="FinishButton" Content="Finish" Width="75" Height="23" IsEnabled="False" Margin="0,8.5"/>
+            <Button x:Name="FinishButton" Content="Finish" Width="75" Height="23" Margin="0,8.5" Click="FinishButton_Click"/>
         </StackPanel>
         <UniformGrid DockPanel.Dock="Bottom" Columns="4">
             <Label>Providers</Label>
