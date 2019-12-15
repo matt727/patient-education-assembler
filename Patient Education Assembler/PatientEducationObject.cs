@@ -93,7 +93,7 @@ namespace Patient_Education_Assembler
         public Uri URL { get; set; }
 
         public string FileName;
-        public String Title { get { return Title; } set { Title = value.Replace("(", Char.ConvertFromUtf32(0x2768)).Replace(")", Char.ConvertFromUtf32(0x2768)); } }
+        public String Title; //{ get { return Title; } set { Title = value.Replace("(", Char.ConvertFromUtf32(0x2768)).Replace(")", Char.ConvertFromUtf32(0x2768)); } }
         public bool Enabled { get; set; }
 
         public string CacheDate {
