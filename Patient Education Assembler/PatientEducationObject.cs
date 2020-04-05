@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Data.SqlClient;
 using System.Data;
+using System.Diagnostics;
 
 namespace Patient_Education_Assembler
 {
@@ -69,7 +70,7 @@ namespace Patient_Education_Assembler
         {
             return File.GetLastWriteTime(cacheFileName());
         }
-        
+
         internal static void cleanupWord()
         {
             if (wordApp != null)
@@ -111,7 +112,7 @@ namespace Patient_Education_Assembler
             get {
                 switch (LoadStatus)
                 {
-                    
+
                     case LoadStatusEnum.DatabaseEntry:
                         return "Database Entry";
                     case LoadStatusEnum.DatabaseAndIndexMatched:
@@ -227,7 +228,7 @@ namespace Patient_Education_Assembler
                 guid = Guid.NewGuid();
             else
                 ThisGUID = guid;
-            
+
             createWordApp();
         }
 
@@ -249,7 +250,7 @@ namespace Patient_Education_Assembler
             Enabled = reader.GetBoolean((int)EducationDatabase.MetadataColumns.Enabled);
 
             URL = new Uri(reader.GetString((int)EducationDatabase.MetadataColumns.URL));
-            
+
             ThisGUID = new Guid(reader.GetString((int)EducationDatabase.MetadataColumns.GUID));
             FileName = ThisGUID + ".rtf";
 
@@ -370,13 +371,13 @@ namespace Patient_Education_Assembler
             currentRange.set_Style(ref wordStyle);
             //Console.WriteLine("Style: {0}", style);
         }
-        
+
         protected void NewParagraph(string style = "")
         {
             currentRange.InsertParagraphAfter();
             currentRange = thisDoc.Paragraphs.Last.Range;
             latestBlockStart = currentRange.Start;
-            
+
             SetStyle(style.Length > 0 ? style : "Normal");
 
             wantNewLine = false;
@@ -532,54 +533,31 @@ namespace Patient_Education_Assembler
         }
 
         public virtual void SaveToDatabase(OleDbConnection conn)
-        {
-            // Always insert into metadata
+        { 
             OleDbCommand metaData = conn.CreateCommand();
             OleDbCommand docCat = conn.CreateCommand();
             OleDbCommand docTrans = conn.CreateCommand();
             {
-
+                // Always insert into metadata
                 if (FromDatabase)
                 {
-                    metaData.CommandText = "UPDATE DocumentAssemblerMetadata SET " +
-                        "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
-                        "GenderID = @gender, AgeID = @age, URL = @url, Enabled = @enabled, " +
-                        "ContentProvider = @provider, Bundle = @bundle, [GUID] = @thisguid " +
-                        "WHERE Doc_ID = @doc";
+                    metaData.CommandText = "UPDATE [DocumentAssemblerMetadata] SET " +
+                        "[FileName] = @fn, [Doc_Lang_ID] = @doclang, [Document_Name] = @title, [Language_ID] = @lang, " +
+                        "[GenderID] = @gender, [AgeID] = @age, [URL] = @url, [Enabled] = @enabled, " +
+                        "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid " +
+                        "WHERE [Doc_ID] = @doc";
                 }
                 else
                 {
                     if (Doc_ID == -1)
                         Doc_ID = EducationDatabase.Self().GetNewDocID();
 
-                    metaData.CommandText = "INSERT INTO DocumentAssemblerMetadata (" +
-                        "FileName, Doc_Lang_Id, Document_Name, Language_ID, " +
-                        "GenderID, AgeID, URL, Enabled, ContentProvider, Bundle, [GUID], Doc_ID" +
+                    metaData.CommandText = "INSERT INTO [DocumentAssemblerMetadata] (" +
+                        "[FileName], [Doc_Lang_Id], [Document_Name], [Language_ID], " +
+                        "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [Doc_ID]" +
                         ") " +
                         "VALUES (@fn, @doclang, @title, @lang, " +
                         "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @doc" +
-                        ")";
-                }
-
-                if (FromDatabase && Enabled)
-                {
-                    // It will be in the main tables - UPDATE.  DocCat will already be correct.
-                    docTrans.CommandText = "UPDATE DocumentTranslations SET " +
-                        "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
-                        "GenderID = @gender, AgeID = @age, URL = @url " +
-                        "WHERE Doc_ID = @doc";
-                }
-                else
-                {
-                    docCat.CommandText = "INSERT INTO DocCat (Doc_ID, CategoryID) " +
-                        "VALUES (@doc, @cat)";
-
-                    docTrans.CommandText = "INSERT INTO DocumentTranslations (" +
-                        "FileName, Doc_Lang_Id, Document_Name, Language_ID, " +
-                        "GenderID, AgeID, URL, Doc_ID" +
-                        ") " +
-                        "VALUES (@fn, @doclang, @title, @lang, " +
-                        "@gender, @age, @url, @doc" +
                         ")";
                 }
 
@@ -597,6 +575,31 @@ namespace Patient_Education_Assembler
                 metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
 
                 metaData.ExecuteNonQuery();
+
+                if (FromDatabase && Enabled)
+                {
+                    // It will be in the main tables - UPDATE.  DocCat will already be correct.
+                    docTrans.CommandText = "UPDATE DocumentTranslations SET " +
+                        "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
+                        "GenderID = @gender, AgeID = @age, URL = @url " +
+                        "WHERE Doc_ID = @doc";
+                }
+                else if (Enabled)
+                {
+                    // Not in the main tables, insert it
+                    docCat.CommandText = "INSERT INTO DocCat (Doc_ID, CategoryID) " +
+                        "VALUES (@doc, @cat)";
+
+                    docTrans.CommandText = "INSERT INTO DocumentTranslations (" +
+                        "FileName, Doc_Lang_Id, Document_Name, Language_ID, " +
+                        "GenderID, AgeID, URL, Doc_ID" +
+                        ") " +
+                        "VALUES (@fn, @doclang, @title, @lang, " +
+                        "@gender, @age, @url, @doc" +
+                        ")";
+
+                }  // Don't insert if not enabled
+
 
                 if (docCat.CommandText.Length > 0)
                 {
@@ -621,12 +624,7 @@ namespace Patient_Education_Assembler
                 }
             }
 
-            /*docCatTableAdapter.Insert(obj.Doc_ID, obj.CategoryID);
-            documentTranslationsTableAdapter.Insert(obj.FileName, obj.Doc_ID, obj.Language_ID, obj.Title, obj.Language_ID, -1, -1, obj.URL.AbsoluteUri);
-            foreach (string synonym in obj.Synonyms.Values)
-            {
-                synonymTableAdapter.Insert(obj.Doc_ID, synonym);
-            }*/
+
         }
     }
 }

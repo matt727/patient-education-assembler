@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Data.OleDb;
 using System.Xml.XPath;
+using System.Diagnostics;
 
 namespace Patient_Education_Assembler
 {
@@ -52,24 +53,26 @@ namespace Patient_Education_Assembler
                 string tempUri = ProviderSpecification.Attribute("url").Value.ToString();
                 contentProviderUrl = new Uri(tempUri);
 
-                if (currentLoadDepth != LoadDepth.TopLevel)
+                
+                XElement e = ProviderSpecification.Element("Bundle");
+                if (e != null)
                 {
-                    XElement e = ProviderSpecification.Element("Bundle");
-                    if (e != null)
-                    {
-                        // TODO Only one bundle per provider is currently supported.
-                        bundleUrl = new Uri(contentProviderUrl, e.Attribute("url").Value.ToString());
-                        contentBundleName = e.Attribute("name").Value;
+                    // TODO Only one bundle per provider is currently supported.
+                    bundleUrl = new Uri(contentProviderUrl, e.Attribute("url").Value.ToString());
+                    contentBundleName = e.Attribute("name").Value.ToString();
 
+                    if (currentLoadDepth != LoadDepth.TopLevel)
+                    {
                         ParseBundle(e);
 
                         ResolveDiscrepancies();
                     }
-                    else
-                    {
-                        MessageBox.Show("No content bundle found within specifications for provider " + contentProviderName, "Missing Content Bundle Definition", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
                 }
+                else
+                {
+                    MessageBox.Show("No content bundle found within specifications for provider " + contentProviderName, "Missing Content Bundle Definition", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            
             } /*catch (Exception e)
             {
                 MessageBox.Show("Unhandled Exception: " + e.ToString(), "Patient Education Assembler");
