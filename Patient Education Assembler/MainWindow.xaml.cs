@@ -32,7 +32,9 @@ namespace Patient_Education_Assembler
 
             InitializeComponent();
 
+            setSpecDirectory(Properties.Settings.Default.SpecDirectory);
             setOutputDirectory(Properties.Settings.Default.OutputDirectory);
+
             ShowWord.IsChecked = Properties.Settings.Default.AlwaysShowWord;
 
             ReportDocumentProgress = new Progress<int>(completed =>
@@ -70,19 +72,49 @@ namespace Patient_Education_Assembler
                 ProviderProgress.Maximum += openFileDialog.FileNames.Length;
                 foreach (String filename in openFileDialog.FileNames)
                 {
-                    SpecificationXML.Text = File.ReadAllText(filename);
-                    HTMLContentProvider currentProvider = new HTMLContentProvider(new Uri("file://" + filename));
-                    currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
-                    ProviderProgress.Value++;
-                    EducationDatabase.Self().addContentProvider(currentProvider.contentProviderName, currentProvider);
-                    currrentProviderChanged();
+                    loadSpecification(filename);
                 }
             }
+        }
+
+        public void loadSpecification(string filename)
+        {
+            SpecificationXML.Text = File.ReadAllText(filename);
+            HTMLContentProvider currentProvider = new HTMLContentProvider(new Uri("file://" + filename));
+            currentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.TopLevel);
+            ProviderProgress.Value++;
+            EducationDatabase.Self().addContentProvider(currentProvider.contentProviderName, currentProvider);
+            currrentProviderChanged();
         }
 
         private void ButtonLoadIndex_Click(object sender, RoutedEventArgs e)
         {
             EducationDatabase.Self().CurrentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.IndexOnly);
+        }
+
+        private void SelectSpecDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new WinForms.FolderBrowserDialog();
+            WinForms.DialogResult result = dialog.ShowDialog();
+
+            if (result == WinForms.DialogResult.OK)
+                setSpecDirectory(dialog.SelectedPath);
+        }
+
+        private void setSpecDirectory(string directory)
+        {
+            SpecDirectoryPath.Text = directory;
+
+            if (directory.Length > 0 && Directory.Exists(directory))
+            {
+                Properties.Settings.Default.SpecDirectory = directory;
+                Properties.Settings.Default.Save();
+
+                foreach (string spec in Directory.GetFiles(directory, "*.xml"))
+                {
+                    loadSpecification(spec);
+                }
+            }
         }
 
         private void SelectOutputDirectory_Click(object sender, RoutedEventArgs e)

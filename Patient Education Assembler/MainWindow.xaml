@@ -48,11 +48,20 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
-                    <Label Content="Output Directory: " HorizontalAlignment="Left" VerticalAlignment="Top"/>
+					<Label Content="Spec Directory: " HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
-                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
+					<StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
+						<TextBox Name="SpecDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
+						<Separator Margin="0" Width="20"/>
+						<Button Name="SelectSpecDirectory" Click="SelectSpecDirectory_Click"  Content="Select..."/>
+					</StackPanel>
+
+					<Label Content="Output Directory: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1"/>
+
+                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
                         <TextBox Name="OutputDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
                         <Separator Margin="0" Width="20"/>
                         <Button Name="SelectOutputDirectory" Click="SelectOutputDirectory_Click"  Content="Select..."/>
@@ -63,29 +72,29 @@
                         <Ellipse Name="DBStatusIndicator" Fill="red" Stroke="Black" Width="25"/>
                     </StackPanel>
 
-                    <Label Content="Max Word Docs: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Grid.Column="0"/>
-                    <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal">
+                    <Label Content="Max Word Docs: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="2" Grid.Column="0"/>
+                    <StackPanel Grid.Column="2" Grid.Row="2" Orientation="Horizontal">
                         <Slider HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Value="20" Maximum="200" TickFrequency="10" SmallChange="1" TickPlacement="BottomRight" />
                         <TextBox>20</TextBox>
                     </StackPanel>
 
-                    <Label Content="Word Behaviour" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="2" Grid.Column="0"/>
-                    <CheckBox Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="2" Grid.Column="1" Checked="ShowWord_CheckedChanged" Unchecked="ShowWord_CheckedChanged"/>
+                    <Label Content="Word Behaviour" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="3" Grid.Column="0"/>
+                    <CheckBox Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" Checked="ShowWord_CheckedChanged" Unchecked="ShowWord_CheckedChanged"/>
 
-                    <Label Content="Review Behaviour " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="3" Grid.Column="0"/>
-                    <ComboBox Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Grid.Column="1" Grid.Row="3">
+                    <Label Content="Review Behaviour " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="4" Grid.Column="0"/>
+                    <ComboBox Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Grid.Column="1" Grid.Row="4">
                         <ComboBoxItem>Review All</ComboBoxItem>
                         <ComboBoxItem>Review only Design Decisions</ComboBoxItem>
                         <ComboBoxItem>Review only on Unsupported Tag</ComboBoxItem>
                         <ComboBoxItem>Never Review</ComboBoxItem>
                     </ComboBox>
 
-                    <Label Grid.Row="4">Your Organisation</Label>
-                    <TextBox x:Name="OrganisationName" Grid.Row="4" Grid.Column="1">Eastern Health</TextBox>
+                    <Label Grid.Row="5">Your Organisation</Label>
+                    <TextBox x:Name="OrganisationName" Grid.Row="5" Grid.Column="1">Eastern Health</TextBox>
 
-                    <Label Grid.Row="5">Your Disclaimer</Label>
+                    <Label Grid.Row="6">Your Disclaimer</Label>
 
-                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="5" Grid.Column="1"/>
+                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="6" Grid.Column="1"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Content Provider">
