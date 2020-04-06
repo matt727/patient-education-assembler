@@ -30,7 +30,7 @@ namespace Patient_Education_Assembler
             {
                 if (bundleSpec.Name == "Bundle" && bundleSpec.Attribute("name") != null && bundleSpec.Attribute("name").Value == bundleName)
                 {
-                    HTMLDocument loadDoc = new HTMLDocument(this, bundleSpec, reader);
+                    HTMLDocument loadDoc = new HTMLDocument(this, bundleSpec.Elements("Document").First(), reader);
                     EducationDatabase.Self().EducationObjects.Add(HTMLDocument.URLForDictionary(loadDoc.URL), loadDoc);
                     EducationDatabase.Self().EducationCollection.Add(loadDoc);
                 }
@@ -66,6 +66,8 @@ namespace Patient_Education_Assembler
                         ParseBundle(e);
 
                         ResolveDiscrepancies();
+
+                        EducationDatabase.Self().scheduleTasks();
                     }
                 }
                 else
@@ -125,8 +127,6 @@ namespace Patient_Education_Assembler
                         LoadDocument(specDoc, document, bundlePostfix);
                 }
             }
-
-            EducationDatabase.Self().scheduleTasks();
         }
 
         /// <summary>

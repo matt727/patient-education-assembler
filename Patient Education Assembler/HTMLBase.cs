@@ -64,17 +64,25 @@ namespace Patient_Education_Assembler
                     catch (WebException e)
                     {
                         HttpWebResponse r = (HttpWebResponse)e.Response;
-                        switch (r.StatusCode)
-                        {
-                            case HttpStatusCode.NotFound:
-                                LoadStatus = LoadStatusEnum.RemovedByContentProvider;
-                                break;
-                            default:
-                                System.Windows.MessageBox.Show("Unhandled HTTP response exception: " + r.ToString(),
-                                "Patient Education Assembler", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                                break;
-                        }
 
+                        if (r != null) {
+                            switch (r.StatusCode)
+                            {
+                                case HttpStatusCode.NotFound:
+                                    LoadStatus = LoadStatusEnum.RemovedByContentProvider;
+                                    break;
+                                default:
+                                    System.Windows.MessageBox.Show("Unhandled HTTP response exception: " + r.ToString(),
+                                    "Patient Education Assembler", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            System.Windows.MessageBox.Show("HTTP error: " + e.Message,
+                                    "Patient Education Assembler", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                            
+                        }
                     }
                 }
             }

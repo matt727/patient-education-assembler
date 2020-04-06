@@ -77,10 +77,12 @@ namespace Patient_Education_Assembler
 
                         if (xpath.Length > 0)
                         {
-                            foreach (HtmlNode synonym in htmlNode.SelectNodes(xpath))
-                            {
-                                AddSynonym(ConvertHtmlText(synonym.InnerText.Trim()));
-                            }
+                            HtmlNodeCollection match = htmlNode.SelectNodes(xpath);
+                            if (match != null)
+                                foreach (HtmlNode synonym in match)
+                                {
+                                    AddSynonym(ConvertHtmlText(synonym.InnerText.Trim()));
+                                }
                         }
                         break;
 

@@ -197,5 +197,15 @@ namespace Patient_Education_Assembler
 
             Close();
         }
+
+        private void RemoveMissing_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (HTMLDocument input in UnmatchedList.Items)
+            {
+                resolutions.Add(new DiscrepancyResolution(DiscrepancyResolution.ActionTypes.Delete, input));
+            }
+
+            unmatched.Clear();
+        }
     }
 }

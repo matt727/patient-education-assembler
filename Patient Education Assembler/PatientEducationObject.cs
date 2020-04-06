@@ -94,7 +94,7 @@ namespace Patient_Education_Assembler
         public Uri URL { get; set; }
 
         public string FileName;
-        public String Title; //{ get { return Title; } set { Title = value.Replace("(", Char.ConvertFromUtf32(0x2768)).Replace(")", Char.ConvertFromUtf32(0x2768)); } }
+        public string Title { get; set; }
         public bool Enabled { get; set; }
 
         public string CacheDate {
@@ -108,7 +108,7 @@ namespace Patient_Education_Assembler
 
         public bool FromDatabase { get; set; }
 
-        public String Status {
+        public string Status {
             get {
                 switch (LoadStatus)
                 {

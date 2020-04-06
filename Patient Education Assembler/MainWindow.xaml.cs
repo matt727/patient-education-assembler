@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WinForms = System.Windows.Forms;
 using System.Configuration;
+using System.Threading;
 
 namespace Patient_Education_Assembler
 {
@@ -224,6 +225,15 @@ namespace Patient_Education_Assembler
         private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
             EducationDatabase.Self().SaveToDatabase();
+        }
+
+        private void WordInstances_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (WordInstanceNumber != null)
+                WordInstanceNumber.Text = ((int)e.NewValue).ToString();
+
+            Properties.Settings.Default.MaxWordInstances = (int)e.NewValue;
+            Properties.Settings.Default.Save();
         }
     }
 }

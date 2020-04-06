@@ -262,7 +262,7 @@ namespace Patient_Education_Assembler
             foreach (HTMLDocument doc in DocumentsReadyToParse)
             {
                 if (doc.isCached())
-                    doc.ParseTask.Start();
+                    doc.ParseTask.RunSynchronously();
                 else
                     delayStartTasks.Add(doc);
             }
@@ -271,7 +271,7 @@ namespace Patient_Education_Assembler
 
             foreach (HTMLDocument doc in delayStartTasks)
             {
-                doc.ParseTask.Start();
+                doc.ParseTask.RunSynchronously();
                 // 10 sec wait before the next task is scheduled - avoid hitting the host too frequently
                 await Task.Delay(10000);
             }
