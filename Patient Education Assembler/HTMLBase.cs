@@ -46,19 +46,17 @@ namespace Patient_Education_Assembler
         {
             LoadStatus = LoadStatusEnum.Retrieving;
 
-            String cacheFN = cacheFileName();
-
-            using (WebClient client = new WebClient())
+            if (isCached())
             {
-                if (File.Exists(cacheFN))
-                {
-                    LoadStatus = LoadStatusEnum.Downloaded;
-                }
-                else
+                LoadStatus = LoadStatusEnum.Downloaded;
+            }
+            else
+            {
+                using (WebClient client = new WebClient())
                 {
                     try
                     {
-                        client.DownloadFile(URL, cacheFN);
+                        client.DownloadFile(URL, cacheFileName());
                         LoadStatus = LoadStatusEnum.Downloaded;
                     }
                     catch (WebException e)

@@ -200,12 +200,12 @@ namespace Patient_Education_Assembler
 
         private void RemoveMissing_Click(object sender, RoutedEventArgs e)
         {
-            foreach (HTMLDocument input in UnmatchedList.Items)
+            foreach (HTMLDocument input in ExistingList.Items)
             {
                 resolutions.Add(new DiscrepancyResolution(DiscrepancyResolution.ActionTypes.Delete, input));
             }
 
-            unmatched.Clear();
+            existing.Clear();
         }
     }
 }

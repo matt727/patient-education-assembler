@@ -35,6 +35,8 @@ namespace Patient_Education_Assembler
 
             setSpecDirectory(Properties.Settings.Default.SpecDirectory);
             setOutputDirectory(Properties.Settings.Default.OutputDirectory);
+            setMaxWordInstances(Properties.Settings.Default.MaxWordInstances);
+            setCacheAge(Properties.Settings.Default.CacheAge);
 
             ShowWord.IsChecked = Properties.Settings.Default.AlwaysShowWord;
 
@@ -230,10 +232,31 @@ namespace Patient_Education_Assembler
         private void WordInstances_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (WordInstanceNumber != null)
-                WordInstanceNumber.Text = ((int)e.NewValue).ToString();
+                setMaxWordInstances((int)e.NewValue);
 
             Properties.Settings.Default.MaxWordInstances = (int)e.NewValue;
             Properties.Settings.Default.Save();
+        }
+
+        private void setMaxWordInstances(int maxInstances)
+        {
+            WordInstances.Value = maxInstances;
+            WordInstanceNumber.Text = maxInstances.ToString();
+        }
+
+        private void CacheAge_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (CacheAgeText != null)
+                setCacheAge((int)e.NewValue);
+
+            Properties.Settings.Default.CacheAge = (int)e.NewValue;
+            Properties.Settings.Default.Save();
+        }
+
+        private void setCacheAge(int cacheAge)
+        {
+            CacheAgeText.Text = cacheAge.ToString() + " day(s)";
+            CacheAge.Value = cacheAge;
         }
     }
 }

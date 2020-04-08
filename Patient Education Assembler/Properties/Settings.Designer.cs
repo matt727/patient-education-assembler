@@ -69,5 +69,17 @@ namespace Patient_Education_Assembler.Properties {
                 this["MaxWordInstances"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("14")]
+        public int CacheAge {
+            get {
+                return ((int)(this["CacheAge"]));
+            }
+            set {
+                this["CacheAge"] = value;
+            }
+        }
     }
 }

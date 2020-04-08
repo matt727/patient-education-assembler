@@ -49,6 +49,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
 						<RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
 					<Label Content="Spec Directory: " HorizontalAlignment="Left" VerticalAlignment="Top"/>
@@ -89,12 +90,18 @@
                         <ComboBoxItem>Never Review</ComboBoxItem>
                     </ComboBox>
 
-                    <Label Grid.Row="5">Your Organisation</Label>
-                    <TextBox x:Name="OrganisationName" Grid.Row="5" Grid.Column="1">Eastern Health</TextBox>
+					<Label Content="Max Cache Age: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="5" Grid.Column="0"/>
+					<StackPanel Grid.Column="2" Grid.Row="5" Orientation="Horizontal">
+						<Slider x:Name="CacheAge" HorizontalAlignment="Left" VerticalAlignment="Top" Value="14" Maximum="90" TickFrequency="10" SmallChange="1" TickPlacement="BottomRight" Minimum="1" LargeChange="10" Width="400" ValueChanged="CacheAge_ValueChanged"/>
+						<TextBox x:Name="CacheAgeText">14 day(s)</TextBox>
+					</StackPanel>
 
-                    <Label Grid.Row="6">Your Disclaimer</Label>
+					<Label Grid.Row="6">Your Organisation</Label>
+                    <TextBox x:Name="OrganisationName" Grid.Row="6" Grid.Column="1">Eastern Health</TextBox>
 
-                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="6" Grid.Column="1"/>
+                    <Label Grid.Row="7">Your Disclaimer</Label>
+
+                    <TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="7" Grid.Column="1"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Content Provider">

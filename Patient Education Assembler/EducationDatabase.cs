@@ -178,13 +178,19 @@ namespace Patient_Education_Assembler
         public void preloadAllDocuments()
         {
             // Determine database index maximums
-            using (OleDbDataReader reader = runQuery("Select MAX(Doc_ID) FROM DocumentTranslations"))
+            using (OleDbDataReader reader = runQuery("Select MAX(Doc_ID) FROM DocumentAssemblerMetadata"))
+            {
                 if (reader.Read())
                     MaxDocId = (int)reader.GetDouble(0);
+                reader.Close();
+            }
 
             using (OleDbDataReader reader = runQuery("Select MAX(SynonymID) FROM Synonym"))
+            {
                 if (reader.Read())
                     MaxSynonymID = (int)reader.GetDouble(0);
+                reader.Close();
+            }
 
             using (OleDbDataReader reader = runQuery("Select * FROM DocumentAssemblerMetadata"))
             {
@@ -216,6 +222,7 @@ namespace Patient_Education_Assembler
                         }   
                     }
                 }
+                reader.Close();
             }
 
             using (OleDbDataReader reader = runQuery("Select * FROM Synonym"))
@@ -226,6 +233,7 @@ namespace Patient_Education_Assembler
                     if (EducationObjectsByDatabaseID.TryGetValue((int)reader.GetInt32((int)SynonymColumns.ID), out doc))
                         doc.LoadSynonym((int)reader.GetDouble((int)SynonymColumns.SynonymID), reader.GetString((int)EducationDatabase.SynonymColumns.Name));
                 }
+                reader.Close();
             }
         }
 
@@ -262,7 +270,7 @@ namespace Patient_Education_Assembler
             foreach (HTMLDocument doc in DocumentsReadyToParse)
             {
                 if (doc.isCached())
-                    doc.ParseTask.RunSynchronously();
+                    doc.ParseTask.Start();
                 else
                     delayStartTasks.Add(doc);
             }
@@ -271,7 +279,7 @@ namespace Patient_Education_Assembler
 
             foreach (HTMLDocument doc in delayStartTasks)
             {
-                doc.ParseTask.RunSynchronously();
+                doc.ParseTask.Start();
                 // 10 sec wait before the next task is scheduled - avoid hitting the host too frequently
                 await Task.Delay(10000);
             }

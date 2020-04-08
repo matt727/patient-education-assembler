@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using HtmlAgilityPack;
 using System.Xml.Linq;
 using System.Data.OleDb;
+using System.Threading;
 
 namespace Patient_Education_Assembler
 {
@@ -34,20 +35,31 @@ namespace Patient_Education_Assembler
             return "html";
         }
 
+        private static Mutex wordMutex = new Mutex();
+
         public override void parseDocument()
         {
             base.parseDocument();
 
-            // Check that there is not a download or access error
-            if (LoadStatus != LoadStatusEnum.LoadedSucessfully)
-                return;
+            try
+            {
+                wordMutex.WaitOne();
 
-            CreateDocument();
+                // Check that there is not a download or access error
+                if (LoadStatus != LoadStatusEnum.LoadedSucessfully)
+                    return;
 
-            ParseNode(topSpec, doc.DocumentNode);
-            addFooter();
+                CreateDocument();
 
-            FinishDocument();
+                ParseNode(topSpec, doc.DocumentNode);
+                addFooter();
+
+                FinishDocument();
+            }
+            finally
+            {
+                wordMutex.ReleaseMutex();
+            }
         }
 
         public void ParseNode(XElement parseNode, HtmlNode htmlNode)
@@ -390,6 +402,7 @@ namespace Patient_Education_Assembler
         internal void deleteFromDatabase()
         {
             LoadStatus = LoadStatusEnum.RemovedByContentProvider;
+            Enabled = false;
         }
 
         internal void foundInWebIndex()

@@ -63,7 +63,7 @@ namespace Patient_Education_Assembler
 
         public bool isCached()
         {
-            return File.Exists(cacheFileName());
+            return File.Exists(cacheFileName()) && cacheDate() > (DateTime.Today.AddDays(0.0 - Properties.Settings.Default.CacheAge));
         }
 
         public DateTime cacheDate()
@@ -576,15 +576,27 @@ namespace Patient_Education_Assembler
 
                 metaData.ExecuteNonQuery();
 
-                if (FromDatabase && Enabled)
+                bool inDB = false;
+                if (FromDatabase)
                 {
-                    // It will be in the main tables - UPDATE.  DocCat will already be correct.
+                    // Is this document in the main tables?
+                    OleDbCommand docCheck = conn.CreateCommand();
+                    docCheck.CommandText = "SELECT COUNT(*) FROM [DocumentTranslations] WHERE [Doc_ID] = @doc";
+                    docCheck.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                    OleDbDataReader result = docCheck.ExecuteReader();
+                    result.Read();
+                    inDB = result.GetInt32(0) > 0;
+                    result.Close();
+                }
+
+                if (inDB && Enabled) {
+                    // It is in the main tables - UPDATE.  DocCat will already be correct.
                     docTrans.CommandText = "UPDATE DocumentTranslations SET " +
                         "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
                         "GenderID = @gender, AgeID = @age, URL = @url " +
                         "WHERE Doc_ID = @doc";
                 }
-                else if (Enabled)
+                else if (!inDB && Enabled)
                 {
                     // Not in the main tables, insert it
                     docCat.CommandText = "INSERT INTO DocCat (Doc_ID, CategoryID) " +
@@ -598,7 +610,14 @@ namespace Patient_Education_Assembler
                         "@gender, @age, @url, @doc" +
                         ")";
 
-                }  // Don't insert if not enabled
+                } 
+                else if (inDB && !Enabled)
+                {
+                    // Delete from main tables as it has been disabled
+                    docCat.CommandText = "DELETE FROM [DocCat] WHERE [Doc_ID] = @doc";
+
+                    docTrans.CommandText = "DELETE FROM [DocumentTranslations] WHERE [Doc_ID] = @doc";
+                }
 
 
                 if (docCat.CommandText.Length > 0)
@@ -622,6 +641,10 @@ namespace Patient_Education_Assembler
 
                     docTrans.ExecuteNonQuery();
                 }
+
+                // We've been inserted into the database now... don't insert again!
+                if (!FromDatabase)
+                    FromDatabase = true;
             }
 
 
