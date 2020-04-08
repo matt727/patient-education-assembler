@@ -147,7 +147,8 @@
                             <DataGridComboBoxColumn ClipboardContentBinding="{x:Null}" Header="Table Option" SelectedValueBinding="{x:Null}" SelectedItemBinding="{x:Null}" TextBinding="{x:Null}"/>
                             <DataGridTextColumn Binding="{Binding CacheDate}" ClipboardContentBinding="{x:Null}" Header="Cache Date"/>
                             <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Header="Last Updated"/>
-                        </DataGrid.Columns>
+							<DataGridTextColumn Binding="{Binding ParseIssueCount}" ClipboardContentBinding="{x:Null}" Header="Issue Count"/>
+						</DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </TabItem>

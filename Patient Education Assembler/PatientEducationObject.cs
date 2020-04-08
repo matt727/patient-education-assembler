@@ -186,6 +186,17 @@ namespace Patient_Education_Assembler
 
         public bool DocumentParsed { get; set; }
 
+        public struct ParseIssue
+        {
+            public string issue;
+            public int location;
+        }
+
+        public List<ParseIssue> ParseIssues { get; set; }
+
+        public int ParseIssueCount { get { return 0;// ParseIssues.Count(); 
+            } }
+
         // New document constructor for not previously accessed URLs
         public PatientEducationObject(PatientEducationProvider provider, Uri url)
         {
@@ -511,7 +522,7 @@ namespace Patient_Education_Assembler
 
         protected void EndList()
         {
-            //Console.WriteLine("End Bullet List");
+            // End Bullet List
             wantNewParagraph = true;
         }
 
@@ -538,8 +549,11 @@ namespace Patient_Education_Assembler
                     }
                     catch (WebException e)
                     {
-                        // TODO move to issues list
-                        Console.WriteLine("Download issue: {0}", e.ToString());
+                        ParseIssues.Add(new ParseIssue
+                        {
+                            issue = "Image download issue: URL " + imageUri + ", error: " + e.ToString(),
+                            location = 0
+                        });
                     }
                 }
 

@@ -69,7 +69,9 @@ namespace Patient_Education_Assembler
                             unmatched.Add(doc);
                             break;
                         case PatientEducationObject.LoadStatusEnum.DatabaseEntry:
-                            existing.Add(doc);
+                            if (doc.Enabled)
+                                existing.Add(doc);
+                            // If not enabled, it has previously been disabled = don't show again
                             break;
                     }
 
