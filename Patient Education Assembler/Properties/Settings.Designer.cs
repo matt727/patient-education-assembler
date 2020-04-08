@@ -60,7 +60,7 @@ namespace Patient_Education_Assembler.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("20")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
         public int MaxWordInstances {
             get {
                 return ((int)(this["MaxWordInstances"]));

@@ -12,7 +12,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="MaxWordInstances" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">20</Value>
+      <Value Profile="(Default)">5</Value>
     </Setting>
     <Setting Name="CacheAge" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">14</Value>

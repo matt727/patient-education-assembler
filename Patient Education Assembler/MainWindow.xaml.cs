@@ -27,6 +27,22 @@ namespace Patient_Education_Assembler
     {
         public static MainWindow thisWindow;
 
+        private static Semaphore maxWordCounter = null;
+        public static Semaphore getWordCounterSemaphore()
+        {
+            if (maxWordCounter == null)
+            {
+                // Fix the number of Word instances
+                // A reasonable approach for simplicity of code
+                thisWindow.WordInstances.IsEnabled = false;
+
+                //Console.WriteLine("Creating semaphore with this many resources: " + Properties.Settings.Default.MaxWordInstances.ToString());
+                maxWordCounter = new Semaphore(Properties.Settings.Default.MaxWordInstances, Properties.Settings.Default.MaxWordInstances);
+            }
+
+            return maxWordCounter;
+        }
+
         public MainWindow()
         {
             thisWindow = this;
@@ -57,6 +73,8 @@ namespace Patient_Education_Assembler
         {
             PatientEducationObject.cleanupWord();
         }
+
+
 
         public Progress<int> ReportDocumentProgress { get; private set; }
 

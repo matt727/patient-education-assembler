@@ -35,15 +35,14 @@ namespace Patient_Education_Assembler
             return "html";
         }
 
-        private static Mutex wordMutex = new Mutex();
-
         public override void parseDocument()
         {
             base.parseDocument();
 
             try
             {
-                wordMutex.WaitOne();
+                // Make sure there are not too many Word documents being written
+                MainWindow.getWordCounterSemaphore().WaitOne();
 
                 // Check that there is not a download or access error
                 if (LoadStatus != LoadStatusEnum.LoadedSucessfully)
@@ -58,7 +57,8 @@ namespace Patient_Education_Assembler
             }
             finally
             {
-                wordMutex.ReleaseMutex();
+                // Done writing this one Word document
+                MainWindow.getWordCounterSemaphore().Release();
             }
         }
 
@@ -171,35 +171,31 @@ namespace Patient_Education_Assembler
             return null;
         }
 
+        public struct ParseIssue
+        {
+            public string issue;
+            public int location;
+        }
+
+        public List<ParseIssue> ParseIssues { get; set; }
+
         public void WalkNodes(HtmlNode thisNode, bool ignoreDiv = false)
         {
             int strongStart = 0;
             int emphasisStart = 0;
             int underlineStart = 0;
 
+            // Open tag logic
             switch (thisNode.NodeType)
             {
                 case HtmlNodeType.Element:
-                    //Console.WriteLine("Tag: {0} WNP {1} WNL {2}", thisNode.Name, wantNewParagraph, wantNewLine);
                     switch (thisNode.Name)
                     {
                         case "h1":
                             NewParagraph("Heading 1");
                             break;
                         case "h2":
-                            // TODO - fix, broken
-                            /*string individualInformation = thisNode.GetAttributeValue("id", "");
-
-                            if (thisNode.GetAttributeValue("id", "") == "individual-information")
-                                skipUntilNextH2 = true;
-                            else
-                            {
-                                skipUntilNextH2 = false;*/
                             NewParagraph("Heading 2");
-                            //}
-
-                            //Console.WriteLine("Individual? {0} {1}", individualInformation, skipUntilNextH2);
-
                             break;
                         case "h3":
                         case "h4":
@@ -256,30 +252,23 @@ namespace Patient_Education_Assembler
                             // Accepted no implementation for now
                             break;
                         default:
-                            Console.WriteLine("Unhandled tag {0} for URL {1}", thisNode.Name, URL);
+                            ParseIssues.Add(new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = currentRange.End });
                             break;
                     }
                     break;
 
                 case HtmlNodeType.Text:
-                    //Console.WriteLine("Text: {0} WNP {1} WNL {2}", ShowHexValue(thisNode.InnerText), wantNewParagraph, wantNewLine);
-
-                    //if (!skipUntilNextH2)
-                    {
-                        ConvertAndAddText(thisNode.InnerText);
-                    }
-
+                    ConvertAndAddText(thisNode.InnerText);
                     break;
 
                 case HtmlNodeType.Comment:
                     break;
 
                 default:
-                    Console.WriteLine("Unhandled node type {0}", thisNode.NodeType);
+                    ParseIssues.Add(new ParseIssue { issue = "Unhandled Node Type " + thisNode.NodeType, location = currentRange.End });
                     break;
             }
 
-            //if (!skipUntilNextH2)
             foreach (HtmlNode childNode in thisNode.ChildNodes)
             {
                 if (ignoreDiv && childNode.NodeType == HtmlNodeType.Element && childNode.Name == "div")
@@ -288,10 +277,10 @@ namespace Patient_Education_Assembler
                 WalkNodes(childNode);
             }
 
+            // Close tag logic
             switch (thisNode.NodeType)
             {
                 case HtmlNodeType.Element:
-                    //Console.Write("Tag: {0}", thisNode.Name);
 
                     switch (thisNode.Name)
                     {
@@ -301,7 +290,6 @@ namespace Patient_Education_Assembler
                         case "h4":
                         case "h5":
                         case "h6":
-                            //Console.Write("Close heading, want new paragraph");
                             wantNewParagraph = true;
                             break;
 
@@ -313,38 +301,15 @@ namespace Patient_Education_Assembler
                         case "li":
                         case "div":
                         case "p":
-                            //Console.Write("Close {0}, want new line", thisNode.Name);
                             wantNewLine = true;
 
-                            /*foreach (HtmlAttribute attr in thisNode.Attributes)
-                            {
-                                Console.WriteLine("Attribute {0} {1}", attr.Name, attr.Value);
-                            }
-                            Console.WriteLine("Class is -> {0}", thisNode.GetAttributeValue("class", ""));*/
-
-                            /*if (thisNode.GetAttributeValue("class", "").Contains("highlighted")) {
-                                //Console.WriteLine("Let's highlight");
-                                thisRange.Font.Bold = 1;
-                                thisRange.Font.Color = Word.WdColor.wdColorRed;
-
-                                currentRange.Start = currentRange.End;
-                                currentRange.Font.Bold = 0;
-                                currentRange.Font.Color = Word.WdColor.wdColorAutomatic;
-                            }*/
                             inHighlight = false;
                             break;
 
                         case "b":
                         case "strong":
-                            //Word.Range strongRange = currentRange.Duplicate;
-                            /*currentRange.Start = currentRange.End;
-                            currentRange.InsertAfter(" ");
-                            currentRange.Start = currentRange.End;*/
-
                             if (latestBlockStart != -1 && strongStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 strongStart = latestBlockStart;
-
-                            //Console.WriteLine("Strong range: {0}, {1}; Current Range {2}, {3}; StrongStart {4}, LatestBlockStart {5}", strongRange.Start, strongRange.End, currentRange.Start, currentRange.End, strongStart, latestBlockStart);
 
                             boldRanges.Add(new Tuple<int, int>(strongStart, currentRange.End));
 

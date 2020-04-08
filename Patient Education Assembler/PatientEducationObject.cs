@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Data.SqlClient;
 using System.Data;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Patient_Education_Assembler
 {
@@ -176,6 +177,8 @@ namespace Patient_Education_Assembler
         }
 
         static protected Word.Application wordApp;
+        static private ReaderWriterLockSlim wordLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+
         protected Word.Document thisDoc;
         protected Word.Range currentRange;
         protected bool wantNewLine;
@@ -273,8 +276,18 @@ namespace Patient_Education_Assembler
 
         public void CreateDocument()
         {
-            thisDoc = wordApp.Documents.Add();
-            currentRange = thisDoc.Range();
+            try
+            {
+                wordLock.EnterWriteLock();
+
+                thisDoc = wordApp.Documents.Add();
+                currentRange = thisDoc.Range();
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+            }
+            
             wantNewLine = false;
             wantNewParagraph = false;
 
@@ -310,80 +323,114 @@ namespace Patient_Education_Assembler
         public virtual void FinishDocument(string fontFamily = "Calibri")
         {
             // apply bold ranges
-            if (boldRanges.Count > 1)
-                foreach (Tuple<int, int> boldRange in boldRanges)
-                {
-                    currentRange.SetRange(boldRange.Item1, boldRange.Item2);
-                    currentRange.Font.Bold = 1;
-                    //Console.WriteLine("Bolding range: ({0}, {1}) => {2}", currentRange.Start, currentRange.End, currentRange.Text);
-                }
-            boldRanges = null;
+            try
+            {
+                wordLock.EnterUpgradeableReadLock();
 
-            if (highlightRanges.Count > 1)
-                foreach (Tuple<int, int> highlightRange in highlightRanges)
-                {
-                    currentRange.SetRange(highlightRange.Item1, highlightRange.Item2);
-                    currentRange.Font.Color = Word.WdColor.wdColorRed;
-                }
-            highlightRanges = null;
+                if (boldRanges.Count > 1)
+                    foreach (Tuple<int, int> boldRange in boldRanges)
+                    {
+                        currentRange.SetRange(boldRange.Item1, boldRange.Item2);
+                        currentRange.Font.Bold = 1;
+                        //Console.WriteLine("Bolding range: ({0}, {1}) => {2}", currentRange.Start, currentRange.End, currentRange.Text);
+                    }
+                boldRanges = null;
 
-            if (emphasisRanges.Count > 1)
-                foreach (Tuple<int, int> emphasisRange in emphasisRanges)
-                {
-                    currentRange.SetRange(emphasisRange.Item1, emphasisRange.Item2);
-                    currentRange.Font.Italic = 1;
-                }
-            emphasisRanges = null;
+                if (highlightRanges.Count > 1)
+                    foreach (Tuple<int, int> highlightRange in highlightRanges)
+                    {
+                        currentRange.SetRange(highlightRange.Item1, highlightRange.Item2);
+                        currentRange.Font.Color = Word.WdColor.wdColorRed;
+                    }
+                highlightRanges = null;
 
-            if (underlineRanges.Count > 1)
-                foreach (Tuple<int, int> underlineRange in underlineRanges)
-                {
-                    currentRange.SetRange(underlineRange.Item1, underlineRange.Item2);
-                    currentRange.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
-                }
-            underlineRanges = null;
+                if (emphasisRanges.Count > 1)
+                    foreach (Tuple<int, int> emphasisRange in emphasisRanges)
+                    {
+                        currentRange.SetRange(emphasisRange.Item1, emphasisRange.Item2);
+                        currentRange.Font.Italic = 1;
+                    }
+                emphasisRanges = null;
 
-            currentRange = thisDoc.Range();
-            currentRange.Font.Name = fontFamily;
+                if (underlineRanges.Count > 1)
+                    foreach (Tuple<int, int> underlineRange in underlineRanges)
+                    {
+                        currentRange.SetRange(underlineRange.Item1, underlineRange.Item2);
+                        currentRange.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
+                    }
+                underlineRanges = null;
 
-            thisDoc.SaveAs2(rtfFileName(), Word.WdSaveFormat.wdFormatRTF);
-            if (closeDocs)
-                thisDoc.Close();
-            thisDoc = null;
+                currentRange = thisDoc.Range();
+                currentRange.Font.Name = fontFamily;
+
+                // Thread protect saving and closing
+                wordLock.EnterWriteLock();
+                
+                thisDoc.SaveAs2(rtfFileName(), Word.WdSaveFormat.wdFormatRTF);
+                if (closeDocs)
+                    thisDoc.Close();
+                thisDoc = null;
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+                wordLock.ExitUpgradeableReadLock();
+            }
 
             DocumentParsed = true;
         }
 
         protected void AddHeading(string text, string style = "")
         {
-            NewParagraph(style.Length > 0 ? style : "Heading 3");
-            currentRange.InsertAfter(text);
-
+            try
+            {
+                wordLock.EnterReadLock();
+                NewParagraph(style.Length > 0 ? style : "Heading 3");
+                currentRange.InsertAfter(text);
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
+        
             wantNewLine = false;
             wantNewParagraph = true;
-
-            //Console.WriteLine("New Heading Paragraph: {0}", text);
         }
 
         protected void SetStyle(string style)
         {
-            object wordStyle = style;
-            currentRange.set_Style(ref wordStyle);
-            //Console.WriteLine("Style: {0}", style);
+            try
+            {
+                wordLock.EnterReadLock();
+
+                object wordStyle = style;
+                currentRange.set_Style(ref wordStyle);
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
         }
 
         protected void NewParagraph(string style = "")
         {
-            currentRange.InsertParagraphAfter();
-            currentRange = thisDoc.Paragraphs.Last.Range;
-            latestBlockStart = currentRange.Start;
+            try
+            {
+                wordLock.EnterReadLock();
 
-            SetStyle(style.Length > 0 ? style : "Normal");
+                currentRange.InsertParagraphAfter();
+                currentRange = thisDoc.Paragraphs.Last.Range;
+                latestBlockStart = currentRange.Start;
 
+                SetStyle(style.Length > 0 ? style : "Normal");
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
+            
             wantNewLine = false;
             wantNewParagraph = false;
-
-            //Console.WriteLine("New Paragraph");
         }
 
         protected void TrimAndAddText(string text)
@@ -406,43 +453,60 @@ namespace Patient_Education_Assembler
 
         protected void AddText(string text)
         {
-            if (wantNewParagraph)
+            try
             {
-                //Console.WriteLine("Wanted new paragraph");
-                NewParagraph();
+                wordLock.EnterReadLock();
+
+                if (wantNewParagraph)
+                {
+                    NewParagraph();
+                }
+                else if (wantNewLine)
+                {
+                    currentRange.InsertAfter("\n");
+                    latestBlockStart = currentRange.End;
+                    wantNewLine = false;
+                }
+
+                currentRange.InsertAfter(text);
             }
-            else
-            if (wantNewLine)
+            finally
             {
-                //Console.WriteLine("Wanted new line");
-                currentRange.InsertAfter("\n");
-                latestBlockStart = currentRange.End;
-                wantNewLine = false;
+                wordLock.ExitReadLock();
             }
-
-            /*if (currentRange.Text == "\n")
-                currentRange.Text = text;
-            else*/
-            currentRange.InsertAfter(text);
-
-            //Console.WriteLine("Content text: '{0}'", text);
         }
 
 
         protected void StartBulletList()
         {
-            NewParagraph();
-            currentRange.ListFormat.ApplyBulletDefault();
-            currentRange.Start = currentRange.End;
-            //Console.WriteLine("Start Bullet List");
+            try
+            {
+                wordLock.EnterReadLock();
+
+                NewParagraph();
+                currentRange.ListFormat.ApplyBulletDefault();
+                currentRange.Start = currentRange.End;
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
         }
 
         protected void StartOrderedList()
         {
-            NewParagraph();
-            currentRange.ListFormat.ApplyNumberDefault();
-            currentRange.Start = currentRange.End;
-            //Console.WriteLine("Start Numbered List");
+            try
+            {
+                wordLock.EnterReadLock();
+
+                NewParagraph();
+                currentRange.ListFormat.ApplyNumberDefault();
+                currentRange.Start = currentRange.End;
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
         }
 
         protected void EndList()
@@ -474,27 +538,36 @@ namespace Patient_Education_Assembler
                     }
                     catch (WebException e)
                     {
+                        // TODO move to issues list
                         Console.WriteLine("Download issue: {0}", e.ToString());
                     }
                 }
 
                 if (fileAvailable)
                 {
-                    if (rightAlign)
+                    try
                     {
-                        Word.Shape s = thisDoc.Shapes.AddPicture(resultFile, false, true, currentRange);
-                        s.Left = (float)Word.WdShapePosition.wdShapeRight;
-                    }
-                    else
-                    {
-                        Word.InlineShape s = thisDoc.InlineShapes.AddPicture(resultFile, false, true, currentRange);
-                    }
+                        wordLock.EnterReadLock();
 
-                    currentRange = thisDoc.Paragraphs.Last.Range;
+                        if (rightAlign)
+                        {
+                            Word.Shape s = thisDoc.Shapes.AddPicture(resultFile, false, true, currentRange);
+                            s.Left = (float)Word.WdShapePosition.wdShapeRight;
+                        }
+                        else
+                        {
+                            Word.InlineShape s = thisDoc.InlineShapes.AddPicture(resultFile, false, true, currentRange);
+                        }
+
+                        currentRange = thisDoc.Paragraphs.Last.Range;
+                    }
+                    finally
+                    {
+                        wordLock.ExitReadLock();
+                    }
+                    
                 }
             }
-
-            //Console.WriteLine("Image: {0}", relUrl);
         }
 
         protected void InsertQRCode(Uri url)
@@ -513,10 +586,19 @@ namespace Patient_Education_Assembler
                 }
             }
 
-            // Insert QR code into the document
-            Word.InlineShape wordQR = thisDoc.InlineShapes.AddPicture(qrPath, false, true, currentRange);
-            wordQR.Width = 100;
-            wordQR.Height = 100;
+            try
+            {
+                wordLock.EnterReadLock();
+
+                // Insert QR code into the document
+                Word.InlineShape wordQR = thisDoc.InlineShapes.AddPicture(qrPath, false, true, currentRange);
+                wordQR.Width = 100;
+                wordQR.Height = 100;
+            }
+            finally
+            {
+                wordLock.ExitReadLock();
+            }
         }
 
         protected void mergeWith(PatientEducationObject input)

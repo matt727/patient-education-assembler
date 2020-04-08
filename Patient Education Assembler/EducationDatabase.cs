@@ -265,6 +265,9 @@ namespace Patient_Education_Assembler
 
         public async void scheduleTasks()
         {
+            // Ensure the word document counter semaphore is created
+            MainWindow.getWordCounterSemaphore();
+
             List<HTMLDocument> delayStartTasks = new List<HTMLDocument>();
 
             foreach (HTMLDocument doc in DocumentsReadyToParse)
