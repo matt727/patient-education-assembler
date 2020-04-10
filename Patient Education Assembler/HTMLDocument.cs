@@ -171,14 +171,6 @@ namespace Patient_Education_Assembler
             return null;
         }
 
-        public struct ParseIssue
-        {
-            public string issue;
-            public int location;
-        }
-
-        public List<ParseIssue> ParseIssues { get; set; }
-
         public void WalkNodes(HtmlNode thisNode, bool ignoreDiv = false)
         {
             int strongStart = 0;
@@ -353,7 +345,17 @@ namespace Patient_Education_Assembler
 
         }
 
-        internal void mergeWith(HTMLDocument input)
+		internal void showProcessedRTF()
+		{
+            wordLock.EnterWriteLock();
+
+            wordApp.Visible = true;
+            thisDoc = wordApp.Documents.Open(rtfFileName());
+
+            wordLock.ExitWriteLock();
+        }
+
+		internal void mergeWith(HTMLDocument input)
         {
             base.mergeWith(input);
         }

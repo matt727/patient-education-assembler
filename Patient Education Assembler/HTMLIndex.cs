@@ -46,7 +46,7 @@ namespace Patient_Education_Assembler
             return "html";
         }
 
-        protected override String cacheFileName()
+        public override String cacheFileName()
         {
             return cachePath() + getMd5Hash(URL.ToString()) + "." + cacheExtension();
         }

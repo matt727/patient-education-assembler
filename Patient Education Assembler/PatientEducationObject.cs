@@ -57,7 +57,7 @@ namespace Patient_Education_Assembler
             return baseFileName() + "cache/";
         }
 
-        protected virtual String cacheFileName()
+        public virtual String cacheFileName()
         {
             return cachePath() + ThisGUID.ToString() + "." + cacheExtension();
         }
@@ -177,7 +177,7 @@ namespace Patient_Education_Assembler
         }
 
         static protected Word.Application wordApp;
-        static private ReaderWriterLockSlim wordLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        static protected ReaderWriterLockSlim wordLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         protected Word.Document thisDoc;
         protected Word.Range currentRange;
@@ -194,8 +194,7 @@ namespace Patient_Education_Assembler
 
         public List<ParseIssue> ParseIssues { get; set; }
 
-        public int ParseIssueCount { get { return 0;// ParseIssues.Count(); 
-            } }
+        public int ParseIssueCount { get { return ParseIssues.Count(); } }
 
         // New document constructor for not previously accessed URLs
         public PatientEducationObject(PatientEducationProvider provider, Uri url)
@@ -219,6 +218,8 @@ namespace Patient_Education_Assembler
 
             Synonyms = new Dictionary<int, string>();
             createWordApp();
+
+            ParseIssues = new List<ParseIssue>();
         }
 
         // New document constructor for index URLs
@@ -244,6 +245,8 @@ namespace Patient_Education_Assembler
                 ThisGUID = guid;
 
             createWordApp();
+
+            ParseIssues = new List<ParseIssue>();
         }
 
         // Database load document constructor
@@ -271,6 +274,8 @@ namespace Patient_Education_Assembler
             Synonyms = new Dictionary<int, string>();
 
             createWordApp();
+
+            ParseIssues = new List<ParseIssue>();
         }
 
         public static void createWordApp()

@@ -276,5 +276,17 @@ namespace Patient_Education_Assembler
             CacheAgeText.Text = cacheAge.ToString() + " day(s)";
             CacheAge.Value = cacheAge;
         }
+
+        private void EducationItemsDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            Console.WriteLine(sender.GetType());
+            SingleItemTab.IsSelected = true;
+
+            HTMLDocument selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
+
+            SingleItemBrowser.Navigate("file://" + selected.cacheFileName());
+
+            selected.showProcessedRTF();
+        }
     }
 }
