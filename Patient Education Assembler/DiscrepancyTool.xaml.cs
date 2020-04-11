@@ -22,7 +22,6 @@ namespace Patient_Education_Assembler
     {
         private ObservableCollection<HTMLDocument> unmatched;
         private ObservableCollection<HTMLDocument> existing;
-        private ObservableCollection<HTMLDocument> matched;
 
         private class DiscrepancyResolution
         {

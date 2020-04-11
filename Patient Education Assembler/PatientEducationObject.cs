@@ -76,8 +76,14 @@ namespace Patient_Education_Assembler
         {
             if (wordApp != null)
             {
-                wordApp.Quit();
-                wordApp = null;
+                try
+                {
+                    wordApp.Quit();
+                    wordApp = null;
+                } catch (System.InvalidCastException)
+                {
+                    // Don't crash if the user already closed Word
+                }
             }
         }
 

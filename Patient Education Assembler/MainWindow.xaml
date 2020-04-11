@@ -1,9 +1,10 @@
-﻿<Window x:Class="Patient_Education_Assembler.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Patient_Education_Assembler"
+        xmlns:Controls="clr-namespace:Microsoft.Toolkit.Wpf.UI.Controls;assembly=Microsoft.Toolkit.Wpf.UI.Controls.WebView" x:Class="Patient_Education_Assembler.MainWindow"
         mc:Ignorable="d"
         Title="Patient Education Assembler" Height="707.059" Width="920.311">
 
@@ -26,10 +27,10 @@
 			<Button x:Name="FinishButton" Content="Finish" Width="75" Height="23" Margin="0,8.5" Click="FinishButton_Click"/>
 		</StackPanel>
 		<UniformGrid DockPanel.Dock="Bottom" Columns="4">
-			<Label>Providers</Label>
-			<Label>Index</Label>
-			<Label>Document</Label>
-			<Label>Review</Label>
+			<Label Content="Providers"/>
+			<Label Content="Index"/>
+			<Label Content="Document"/>
+			<Label Content="Review"/>
 			<ProgressBar x:Name="ProviderProgress" Background="#FFE76363" Maximum="1" SmallChange="1" Foreground="#FF1E9834"/>
 			<ProgressBar x:Name="IndexProgress" Background="#FFE78463" Maximum="1" SmallChange="1" Foreground="#FF87D72F"/>
 			<ProgressBar x:Name="DocumentProgress" Background="#FFE7B463" Maximum="1" SmallChange="1" Foreground="#FF93D738"/>
@@ -55,68 +56,68 @@
 					<Label Content="Spec Directory: " HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
 					<StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
-						<TextBox Name="SpecDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
+						<TextBox x:Name="SpecDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
 						<Separator Margin="0" Width="20"/>
-						<Button Name="SelectSpecDirectory" Click="SelectSpecDirectory_Click"  Content="Select..."/>
+						<Button x:Name="SelectSpecDirectory" Click="SelectSpecDirectory_Click"  Content="Select..."/>
 					</StackPanel>
 
 					<Label Content="Output Directory: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1"/>
 
 					<StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
-						<TextBox Name="OutputDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
+						<TextBox x:Name="OutputDirectoryPath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Grid.Column="1" MinWidth="200"/>
 						<Separator Margin="0" Width="20"/>
-						<Button Name="SelectOutputDirectory" Click="SelectOutputDirectory_Click"  Content="Select..."/>
+						<Button x:Name="SelectOutputDirectory" Click="SelectOutputDirectory_Click"  Content="Select..."/>
 						<Separator Margin="0" Width="20"/>
-						<Button Name="ConnectToDatabase" Content="Connect to Database" Click="ConnectToDatabase_Click"/>
+						<Button x:Name="ConnectToDatabase" Content="Connect to Database" Click="ConnectToDatabase_Click"/>
 						<Separator Margin="0" Width="20"/>
 						<Label Content="Connection Status:"/>
-						<Ellipse Name="DBStatusIndicator" Fill="red" Stroke="Black" Width="25"/>
+						<Ellipse x:Name="DBStatusIndicator" Fill="red" Stroke="Black" Width="25"/>
 					</StackPanel>
 
 					<Label Content="Max Word Docs: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="2" Grid.Column="0"/>
 					<StackPanel Grid.Column="2" Grid.Row="2" Orientation="Horizontal">
 						<Slider x:Name="WordInstances" HorizontalAlignment="Left" VerticalAlignment="Top" Value="20" Maximum="200" TickFrequency="10" SmallChange="1" TickPlacement="BottomRight" Minimum="1" LargeChange="10" Width="400" ValueChanged="WordInstances_ValueChanged"/>
-						<TextBox x:Name="WordInstanceNumber">20</TextBox>
+						<TextBox x:Name="WordInstanceNumber" Text="20"/>
 					</StackPanel>
 
 					<Label Content="Word Behaviour" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="3" Grid.Column="0"/>
-					<CheckBox Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" Checked="ShowWord_CheckedChanged" Unchecked="ShowWord_CheckedChanged"/>
+					<CheckBox x:Name="ShowWord"  Content="Always Show Word" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="3" Grid.Column="1" Checked="ShowWord_CheckedChanged" Unchecked="ShowWord_CheckedChanged"/>
 
 					<Label Content="Review Behaviour " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="4" Grid.Column="0"/>
 					<ComboBox Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Grid.Column="1" Grid.Row="4">
-						<ComboBoxItem>Review All</ComboBoxItem>
-						<ComboBoxItem>Review only Design Decisions</ComboBoxItem>
-						<ComboBoxItem>Review only on Unsupported Tag</ComboBoxItem>
-						<ComboBoxItem>Never Review</ComboBoxItem>
+						<ComboBoxItem Content="Review All"/>
+						<ComboBoxItem Content="Review only Design Decisions"/>
+						<ComboBoxItem Content="Review only on Unsupported Tag"/>
+						<ComboBoxItem Content="Never Review"/>
 					</ComboBox>
 
 					<Label Content="Max Cache Age: " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="5" Grid.Column="0"/>
 					<StackPanel Grid.Column="2" Grid.Row="5" Orientation="Horizontal">
 						<Slider x:Name="CacheAge" HorizontalAlignment="Left" VerticalAlignment="Top" Value="14" Maximum="90" TickFrequency="10" SmallChange="1" TickPlacement="BottomRight" Minimum="1" LargeChange="10" Width="400" ValueChanged="CacheAge_ValueChanged"/>
-						<TextBox x:Name="CacheAgeText">14 day(s)</TextBox>
+						<TextBox x:Name="CacheAgeText" Text="14 day(s)"/>
 					</StackPanel>
 
-					<Label Grid.Row="6">Your Organisation</Label>
-					<TextBox x:Name="OrganisationName" Grid.Row="6" Grid.Column="1">Eastern Health</TextBox>
+					<Label Grid.Row="6" Content="Your Organisation"/>
+					<TextBox x:Name="OrganisationName" Grid.Row="6" Grid.Column="1" Text="Eastern Health"/>
 
-					<Label Grid.Row="7">Your Disclaimer</Label>
+					<Label Grid.Row="7" Content="Your Disclaimer"/>
 
-					<TextBox Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="7" Grid.Column="1"/>
+					<TextBox x:Name="DisclaimerTextBox" TextWrapping="Wrap" Text="Information in this education material was downloaded by %ORGANISATION% from %PROVIDER% on %CACHEDATE%, and may have been modified by your doctor. For further information, and the latest version, go to their website - either scan the QR code, or copy the following address into your web browser:" Grid.Row="7" Grid.Column="1"/>
 				</Grid>
 			</TabItem>
 			<TabItem Header="Content Provider">
 				<DockPanel>
 					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top"/>
 					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-						<Button Name="ReloadContentSpec" IsEnabled="False">Reload Spec</Button>
+						<Button x:Name="ReloadContentSpec" IsEnabled="False" Content="Reload Spec"/>
 						<Separator Width="20"/>
-						<Button Name="ButtonLoadIndex" Click="ButtonLoadIndex_Click" IsEnabled="False">Load Index Only</Button>
+						<Button x:Name="ButtonLoadIndex" Click="ButtonLoadIndex_Click" IsEnabled="False" Content="Load Index Only"/>
 						<Separator Width="20"/>
-						<Button Name="ButtonParseOne" Click="ButtonParseOne_Click" IsEnabled="False">Parse One Document</Button>
+						<Button x:Name="ButtonParseOne" Click="ButtonParseOne_Click" IsEnabled="False" Content="Parse One Document"/>
 						<Label Content="For full content load, select 'Start This' or 'Start All' above"/>
 					</StackPanel>
 
-					<TextBox Name="SpecificationXML" HorizontalAlignment="Left" VerticalAlignment="Top" IsReadOnly="True"/>
+					<TextBox x:Name="SpecificationXML" HorizontalAlignment="Left" VerticalAlignment="Top" IsReadOnly="True"/>
 				</DockPanel>
 			</TabItem>
 			<TabItem Header="Education Items">
@@ -137,7 +138,7 @@
 
 
 					</StackPanel>
-					<DataGrid Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" MouseDoubleClick="EducationItemsDataGrid_MouseDoubleClick">
+					<DataGrid x:Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" MouseDoubleClick="EducationItemsDataGrid_MouseDoubleClick">
 						<DataGrid.Columns>
 							<DataGridCheckBoxColumn Binding="{Binding Enabled}" ClipboardContentBinding="{x:Null}" Header="Included"/>
 							<DataGridTextColumn Binding="{Binding Status}" ClipboardContentBinding="{x:Null}" Header="Status" IsReadOnly="True"/>
@@ -155,17 +156,18 @@
 			<TabItem x:Name="SingleItemTab" Header="Single Item">
 				<DockPanel>
 					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-						<Button>Exclude Item</Button>
+						<Button Content="Exclude Item"/>
 						<Separator Width="20"/>
-						<Label>Table Handling:</Label>
+						<Label Content="Table Handling:"/>
 						<ComboBox Width="120">
 							<ComboBoxItem Content="Flatten"/>
 						</ComboBox>
 					</StackPanel>
-					<WebBrowser x:Name="SingleItemBrowser"></WebBrowser>
+					<Controls:WebView x:Name="SingleItemBrowser" IsJavaScriptEnabled="False"/>
 				</DockPanel>
 			</TabItem>
 			<Label Content="Label" Height="100" Width="100"/>
+			
 		</TabControl>
 
 

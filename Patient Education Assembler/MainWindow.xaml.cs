@@ -279,12 +279,22 @@ namespace Patient_Education_Assembler
 
         private void EducationItemsDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            Console.WriteLine(sender.GetType());
             SingleItemTab.IsSelected = true;
 
             HTMLDocument selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
 
-            SingleItemBrowser.Navigate("file://" + selected.cacheFileName());
+            if (selected.isCached())
+            try
+            {
+                Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
+                MessageBox.Show(localUri.ToString());
+                //SingleItemBrowser.Navigate(selected.cacheFileName());
+                SingleItemBrowser.Navigate(localUri);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Exception: " + ex.Message);
+            }
 
             selected.showProcessedRTF();
         }
