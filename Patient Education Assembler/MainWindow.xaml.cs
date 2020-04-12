@@ -286,10 +286,12 @@ namespace Patient_Education_Assembler
             if (selected.isCached())
             try
             {
-                Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
-                MessageBox.Show(localUri.ToString());
-                //SingleItemBrowser.Navigate(selected.cacheFileName());
-                SingleItemBrowser.Navigate(localUri);
+                    //Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
+                    //MessageBox.Show(localUri.ToString());
+                    //SingleItemBrowser.Navigate(selected.cacheFileName());
+                    //SingleItemBrowser.Navigate(localUri);
+
+                SingleItemBrowser.Navigate(selected.URL);
             }
             catch (System.Exception ex)
             {
