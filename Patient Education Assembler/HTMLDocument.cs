@@ -350,7 +350,7 @@ namespace Patient_Education_Assembler
             wordLock.EnterWriteLock();
 
             wordApp.Visible = true;
-            thisDoc = wordApp.Documents.Open(rtfFileName());
+            OpenDocument(rtfFileName());
 
             wordLock.ExitWriteLock();
         }

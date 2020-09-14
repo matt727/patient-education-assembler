@@ -4,7 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Patient_Education_Assembler"
-        xmlns:Controls="clr-namespace:Microsoft.Toolkit.Wpf.UI.Controls;assembly=Microsoft.Toolkit.Wpf.UI.Controls.WebView" x:Class="Patient_Education_Assembler.MainWindow"
+        xmlns:Controls="clr-namespace:Microsoft.Toolkit.Wpf.UI.Controls;assembly=Microsoft.Toolkit.Wpf.UI.Controls.WebView" 
+		xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+		x:Class="Patient_Education_Assembler.MainWindow"
         mc:Ignorable="d"
         Title="Patient Education Assembler" Height="707.059" Width="920.311">
 
@@ -163,11 +165,10 @@
 							<ComboBoxItem Content="Flatten"/>
 						</ComboBox>
 					</StackPanel>
-					<Controls:WebView x:Name="SingleItemBrowser" IsJavaScriptEnabled="False"/>
+					<wv2:WebView2 Name="SingleItemBrowser" Source="https://www.microsoft.com"/>
 				</DockPanel>
 			</TabItem>
-			<Label Content="Label" Height="100" Width="100"/>
-			
+
 		</TabControl>
 
 

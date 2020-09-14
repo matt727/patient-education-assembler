@@ -91,7 +91,7 @@ namespace Patient_Education_Assembler
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (resolutions.Count() > 0 && MessageBox.Show("There are unsaved changes, are you sure you wish to cancel resolution?", "Unsaved Changeds", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+            if (resolutions.Count > 0 && MessageBox.Show("There are unsaved changes, are you sure you wish to cancel resolution?", "Unsaved Changeds", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                 return;
 
             Close();

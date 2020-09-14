@@ -92,15 +92,15 @@ namespace Patient_Education_Assembler
         private static bool invisible = true, closeDocs = true;
 
         // Database fields
-        public int AreaID;
-        public int CategoryID;
-        public int Language_ID;
-        public int Doc_LangID;
-        public int Doc_ID;
+        public int AreaID { get; }
+        public int CategoryID { get; }
+        public int LanguageID { get; }
+        public int DocLangID { get; }
+        public int DocID { get; protected set; }
 
         public Uri URL { get; set; }
 
-        public string FileName;
+        private string FileName;
         public string Title { get; set; }
         public bool Enabled { get; set; }
 
@@ -175,20 +175,20 @@ namespace Patient_Education_Assembler
 
         public Guid ThisGUID { get; set; }
 
-        public Dictionary<int, string> Synonyms { get; set; }
+        public Dictionary<int, string> Synonyms { get; }
         public void AddSynonym(string synonym)
         {
             if (!Synonyms.ContainsValue(synonym))
-                Synonyms.Add(EducationDatabase.Self().GetNewSynonymID(), synonym);
+                Synonyms.Add(EducationDatabase.GetNewSynonymID(), synonym);
         }
 
-        static protected Word.Application wordApp;
-        static protected ReaderWriterLockSlim wordLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        static protected Word.Application wordApp { get; private set; }
+        static protected ReaderWriterLockSlim wordLock { get; } = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
-        protected Word.Document thisDoc;
-        protected Word.Range currentRange;
-        protected bool wantNewLine;
-        protected bool wantNewParagraph;
+        protected Word.Document thisDoc { get; private set; }
+        protected Word.Range currentRange { get; private set; }
+        protected bool wantNewLine { get; set; }
+        protected bool wantNewParagraph { get; set; }
 
         public bool DocumentParsed { get; set; }
 
@@ -200,7 +200,7 @@ namespace Patient_Education_Assembler
 
         public List<ParseIssue> ParseIssues { get; set; }
 
-        public int ParseIssueCount { get { return ParseIssues.Count(); } }
+        public int ParseIssueCount { get { return ParseIssues.Count; } }
 
         // New document constructor for not previously accessed URLs
         public PatientEducationObject(PatientEducationProvider provider, Uri url)
@@ -212,10 +212,10 @@ namespace Patient_Education_Assembler
 
             // Setup defaults and IDs for new documents
             AreaID = 1;
-            Language_ID = 1;
+            LanguageID = 1;
             CategoryID = 1;
-            Doc_LangID = 1; // English (default) TODO support other languages
-            Doc_ID = -1;
+            DocLangID = 1; // English (default) TODO support other languages
+            DocID = -1;
 
             URL = url;
 
@@ -229,7 +229,7 @@ namespace Patient_Education_Assembler
         }
 
         // New document constructor for index URLs
-        public PatientEducationObject(PatientEducationProvider provider, Uri url, Guid guid)
+        public PatientEducationObject(PatientEducationProvider provider, Uri url, Guid thisGuid)
         {
             ParentProvider = provider;
             FromDatabase = true;
@@ -238,17 +238,17 @@ namespace Patient_Education_Assembler
 
             // Setup defaults and IDs for new documents
             AreaID = 1;
-            Language_ID = 1;
+            LanguageID = 1;
             CategoryID = 1;
-            Doc_LangID = 1; // English (default) TODO support other languages
-            Doc_ID = -1;
+            DocLangID = 1; // English (default) TODO support other languages
+            DocID = -1;
 
             URL = url;
 
-            if (guid == Guid.Empty)
-                guid = Guid.NewGuid();
+            if (thisGuid == Guid.Empty)
+                thisGuid = Guid.NewGuid();
             else
-                ThisGUID = guid;
+                ThisGUID = thisGuid;
 
             createWordApp();
 
@@ -265,10 +265,10 @@ namespace Patient_Education_Assembler
 
             // Setup defaults and IDs for loaded documents
             AreaID = 1;
-            Language_ID = 1;
+            LanguageID = 1;
             CategoryID = 1;
-            Doc_LangID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_Lang_Id);
-            Doc_ID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_ID);
+            DocLangID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_Lang_Id);
+            DocID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_ID);
             Title = reader.GetString((int)EducationDatabase.MetadataColumns.Document_Name);
             Enabled = reader.GetBoolean((int)EducationDatabase.MetadataColumns.Enabled);
 
@@ -319,15 +319,20 @@ namespace Patient_Education_Assembler
             underlineRanges = new List<Tuple<int, int>>();
         }
 
+        protected void OpenDocument(string fileName)
+		{
+            thisDoc = wordApp.Documents.Open(fileName);
+        }
+
         internal void LoadSynonym(int synonymID, string synonym)
         {
             if (!Synonyms.ContainsKey(synonymID))
                 Synonyms.Add(synonymID, synonym);
         }
 
-        protected static bool skipUntilNextH2 = false;
-        protected static bool inHighlight = false;
-        protected static int latestBlockStart = 0;
+        protected static bool skipUntilNextH2 { get; set; }
+        protected static bool inHighlight { get; set; }
+        protected static int latestBlockStart { get; set; }
 
         protected List<Tuple<int, int>> boldRanges, highlightRanges, emphasisRanges, underlineRanges;
 
@@ -656,8 +661,8 @@ namespace Patient_Education_Assembler
                 }
                 else
                 {
-                    if (Doc_ID == -1)
-                        Doc_ID = EducationDatabase.Self().GetNewDocID();
+                    if (DocID == -1)
+                        DocID = EducationDatabase.GetNewDocID();
 
                     metaData.CommandText = "INSERT INTO [DocumentAssemblerMetadata] (" +
                         "[FileName], [Doc_Lang_Id], [Document_Name], [Language_ID], " +
@@ -669,9 +674,9 @@ namespace Patient_Education_Assembler
                 }
 
                 metaData.Parameters.Add("@fn", OleDbType.VarChar, 255).Value = FileName;
-                metaData.Parameters.Add("@doclang", OleDbType.Double).Value = (double)Doc_LangID;
+                metaData.Parameters.Add("@doclang", OleDbType.Double).Value = (double)DocLangID;
                 metaData.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
-                metaData.Parameters.Add("@lang", OleDbType.Double).Value = (double)Language_ID;
+                metaData.Parameters.Add("@lang", OleDbType.Double).Value = (double)LanguageID;
                 metaData.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
                 metaData.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
                 metaData.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
@@ -679,7 +684,7 @@ namespace Patient_Education_Assembler
                 metaData.Parameters.Add("@provider", OleDbType.VarChar, 255).Value = ParentProvider.contentProviderName;
                 metaData.Parameters.Add("@bundle", OleDbType.VarChar, 255).Value = ParentProvider.contentBundleName;
                 metaData.Parameters.Add("@thisguid", OleDbType.VarChar, 255).Value = ThisGUID.ToString();
-                metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
 
                 metaData.ExecuteNonQuery();
 
@@ -689,7 +694,7 @@ namespace Patient_Education_Assembler
                     // Is this document in the main tables?
                     OleDbCommand docCheck = conn.CreateCommand();
                     docCheck.CommandText = "SELECT COUNT(*) FROM [DocumentTranslations] WHERE [Doc_ID] = @doc";
-                    docCheck.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                    docCheck.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
                     OleDbDataReader result = docCheck.ExecuteReader();
                     result.Read();
                     inDB = result.GetInt32(0) > 0;
@@ -729,7 +734,7 @@ namespace Patient_Education_Assembler
 
                 if (docCat.CommandText.Length > 0)
                 {
-                    docCat.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                    docCat.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
                     docCat.Parameters.Add("@cat", OleDbType.BigInt).Value = (long)1;
 
                     docCat.ExecuteNonQuery();
@@ -738,13 +743,13 @@ namespace Patient_Education_Assembler
                 if (docTrans.CommandText.Length > 0)
                 {
                     docTrans.Parameters.Add("@fn", OleDbType.VarChar, 255).Value = FileName;
-                    docTrans.Parameters.Add("@doclang", OleDbType.Double).Value = (double)Doc_LangID;
+                    docTrans.Parameters.Add("@doclang", OleDbType.Double).Value = (double)DocLangID;
                     docTrans.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
-                    docTrans.Parameters.Add("@lang", OleDbType.Double).Value = (double)Language_ID;
+                    docTrans.Parameters.Add("@lang", OleDbType.Double).Value = (double)LanguageID;
                     docTrans.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
                     docTrans.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
                     docTrans.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
-                    docTrans.Parameters.Add("@doc", OleDbType.Double).Value = (double)Doc_ID;
+                    docTrans.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
 
                     docTrans.ExecuteNonQuery();
                 }

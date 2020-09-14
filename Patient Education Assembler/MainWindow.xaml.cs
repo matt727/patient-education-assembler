@@ -25,9 +25,9 @@ namespace Patient_Education_Assembler
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static MainWindow thisWindow;
+        public static MainWindow thisWindow { get; private set; }
 
-        private static Semaphore maxWordCounter = null;
+        private static Semaphore maxWordCounter;
         public static Semaphore getWordCounterSemaphore()
         {
             if (maxWordCounter == null)
@@ -115,11 +115,13 @@ namespace Patient_Education_Assembler
 
         private void SelectSpecDirectory_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new WinForms.FolderBrowserDialog();
-            WinForms.DialogResult result = dialog.ShowDialog();
+            using (var dialog = new WinForms.FolderBrowserDialog())
+			{
+                WinForms.DialogResult result = dialog.ShowDialog();
 
-            if (result == WinForms.DialogResult.OK)
-                setSpecDirectory(dialog.SelectedPath);
+                if (result == WinForms.DialogResult.OK)
+                    setSpecDirectory(dialog.SelectedPath);
+            }
         }
 
         private void setSpecDirectory(string directory)
@@ -140,11 +142,13 @@ namespace Patient_Education_Assembler
 
         private void SelectOutputDirectory_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new WinForms.FolderBrowserDialog();
-            WinForms.DialogResult result = dialog.ShowDialog();
+            using (var dialog = new WinForms.FolderBrowserDialog())
+            {
+                WinForms.DialogResult result = dialog.ShowDialog();
 
-            if (result == WinForms.DialogResult.OK)
-                setOutputDirectory(dialog.SelectedPath);
+                if (result == WinForms.DialogResult.OK)
+                    setOutputDirectory(dialog.SelectedPath);
+            }
         }
 
         private void setOutputDirectory(string directory)
@@ -286,12 +290,12 @@ namespace Patient_Education_Assembler
             if (selected.isCached())
             try
             {
-                    //Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
-                    //MessageBox.Show(localUri.ToString());
-                    //SingleItemBrowser.Navigate(selected.cacheFileName());
-                    //SingleItemBrowser.Navigate(localUri);
+                    Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
+                    MessageBox.Show(localUri.ToString());
+                    //SingleItemBrowser.NavigateToString(selected.cacheFileName());
+                    SingleItemBrowser.NavigateToString(localUri.ToString());
 
-                SingleItemBrowser.Navigate(selected.URL);
+                    // SingleItemBrowser.Navigate(selected.URL);
             }
             catch (System.Exception ex)
             {

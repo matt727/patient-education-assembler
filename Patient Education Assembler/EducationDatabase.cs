@@ -43,7 +43,7 @@ namespace Patient_Education_Assembler
         private static int MaxSynonymID = 1;
         private static int MaxDocId = 1;
 
-        internal int GetNewDocID()
+        static internal int GetNewDocID()
         {
             return ++MaxDocId;
         }
@@ -52,8 +52,8 @@ namespace Patient_Education_Assembler
         {
             EducationObjects.Add(equivalentURL, input);
             EducationCollection.Add(input);
-            if (input.Doc_ID >= 0)
-                EducationObjectsByDatabaseID.Add(input.Doc_ID, input);
+            if (input.DocID >= 0)
+                EducationObjectsByDatabaseID.Add(input.DocID, input);
         }
 
         internal void updateDocumentURL(HTMLDocument input, string oldEquivalentURL, string newEquivalentURL)
@@ -68,7 +68,7 @@ namespace Patient_Education_Assembler
             EducationObjects.Remove(HTMLDocument.URLForDictionary(input.URL));
             EducationObjects.Remove(HTMLDocument.URLForDictionary(remainingDocument.URL));
             EducationObjects.Add(HTMLDocument.URLForDictionary(input.URL), remainingDocument);
-            EducationObjectsByDatabaseID.Remove(input.Doc_ID);
+            EducationObjectsByDatabaseID.Remove(input.DocID);
             obsoleteDocuments.Add(input);
         }
 
@@ -135,7 +135,7 @@ namespace Patient_Education_Assembler
         {
             var IndexOfKey = contentProviders.IndexOfKey(CurrentProvider.contentProviderName);
             if (IndexOfKey == 0)
-                IndexOfKey = contentProviders.Count() - 1;
+                IndexOfKey = contentProviders.Count - 1;
             else
                 IndexOfKey--;
             CurrentProvider = contentProviders.Values[IndexOfKey];
@@ -170,7 +170,7 @@ namespace Patient_Education_Assembler
 
         }
 
-        internal int GetNewSynonymID()
+        static internal int GetNewSynonymID()
         {
             return ++MaxSynonymID;
         }
@@ -178,22 +178,24 @@ namespace Patient_Education_Assembler
         public void preloadAllDocuments()
         {
             // Determine database index maximums
-            using (OleDbDataReader reader = runQuery("Select MAX(Doc_ID) FROM DocumentAssemblerMetadata"))
+
+            using (OleDbCommand cmd = new OleDbCommand("Select MAX(Doc_ID) FROM DocumentAssemblerMetadata", conn))
             {
+                OleDbDataReader reader = cmd.ExecuteReader(); 
                 if (reader.Read())
                     MaxDocId = (int)reader.GetDouble(0);
-                reader.Close();
             }
 
-            using (OleDbDataReader reader = runQuery("Select MAX(SynonymID) FROM Synonym"))
+            using (OleDbCommand cmd = new OleDbCommand("Select MAX(SynonymID) FROM Synonym", conn))
             {
+                OleDbDataReader reader = cmd.ExecuteReader();
                 if (reader.Read())
                     MaxSynonymID = (int)reader.GetDouble(0);
-                reader.Close();
             }
 
-            using (OleDbDataReader reader = runQuery("Select * FROM DocumentAssemblerMetadata"))
+            using (OleDbCommand cmd = new OleDbCommand("Select * FROM DocumentAssemblerMetadata", conn))
             {
+                OleDbDataReader reader = cmd.ExecuteReader();
                 List<String> missingProviders = new List<string>();
                 while (reader.Read())
                 {
@@ -222,33 +224,29 @@ namespace Patient_Education_Assembler
                         }   
                     }
                 }
-                reader.Close();
             }
 
-            using (OleDbDataReader reader = runQuery("Select * FROM Synonym"))
+            using (OleDbCommand cmd = new OleDbCommand("Select * FROM Synonym", conn))
             {
+                OleDbDataReader reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     PatientEducationObject doc;
                     if (EducationObjectsByDatabaseID.TryGetValue((int)reader.GetInt32((int)SynonymColumns.ID), out doc))
                         doc.LoadSynonym((int)reader.GetDouble((int)SynonymColumns.SynonymID), reader.GetString((int)EducationDatabase.SynonymColumns.Name));
                 }
-                reader.Close();
             }
-        }
-
-        public static OleDbDataReader runQuery(String query)
-        {
-            OleDbCommand cmd = new OleDbCommand(query, conn);
-            return cmd.ExecuteReader();
         }
 
         public static Guid guidForURL(Uri url)
         {
-            OleDbDataReader reader = runQuery("SELECT * FROM DocumentAssemblerMetadata WHERE URL = '" + url.ToString() + "'");
-            while (reader.Read())
+            using (OleDbCommand cmd = new OleDbCommand("SELECT * FROM DocumentAssemblerMetadata WHERE URL = '" + url.ToString() + "'", conn))
             {
-                return new Guid(reader.GetString((int)MetadataColumns.GUID));
+                OleDbDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    return new Guid(reader.GetString((int)MetadataColumns.GUID));
+                }
             }
 
             return Guid.Empty;
