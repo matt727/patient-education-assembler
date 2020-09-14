@@ -13,7 +13,7 @@ using System.Data.OleDb;
 using System.Xml.XPath;
 using System.Diagnostics;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     public class HTMLContentProvider : PatientEducationProvider, INotifyPropertyChanged
     {
@@ -203,13 +203,13 @@ namespace Patient_Education_Assembler
                 }
             }
 
-            if (synonym.Count() > 0)
+            if (synonym.Length > 0)
                 thisPage.AddSynonym(synonym);
 
             MainWindow.thisWindow.IndexProgress.Value++;
         }
 
-        private void requestRetrieveAndParse(HTMLDocument thisPage)
+        static private void requestRetrieveAndParse(HTMLDocument thisPage)
         {
             if (thisPage.DocumentParsed || thisPage.ParseTask != null)
                 return;

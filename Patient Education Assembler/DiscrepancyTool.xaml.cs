@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     /// <summary>
     /// Interaction logic for DiscrepancyTool.xaml

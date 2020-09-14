@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     class PatientEducationCollection : INotifyPropertyChanged
     {

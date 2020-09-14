@@ -18,7 +18,7 @@ using WinForms = System.Windows.Forms;
 using System.Configuration;
 using System.Threading;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

@@ -4,11 +4,11 @@ using System.Net;
 using System.IO;
 using System.Data.OleDb;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     public abstract class HTMLBase : PatientEducationObject
     {
-        public HtmlDocument doc;
+        public HtmlDocument doc { get; private set; }
 
         public HTMLContentProvider HTMLParentProvider => (HTMLContentProvider)base.ParentProvider;
 
@@ -17,8 +17,8 @@ namespace Patient_Education_Assembler
         {
         }
 
-        public HTMLBase(HTMLContentProvider provider, Uri uri, Guid guid)
-        : base(provider, uri, guid)
+        public HTMLBase(HTMLContentProvider provider, Uri uri, Guid thisGuid)
+        : base(provider, uri, thisGuid)
         {
         }
 
@@ -117,7 +117,7 @@ namespace Patient_Education_Assembler
 
         //private static System.Text.RegularExpressions.Regex removeWS = new System.Text.RegularExpressions.Regex(@"\s*");
 
-        protected string ConvertHtmlText(string input)
+        static protected string ConvertHtmlText(string input)
         {
             string ret = WebUtility.HtmlDecode(input);
             //removeWS.Replace(ret, @" ");

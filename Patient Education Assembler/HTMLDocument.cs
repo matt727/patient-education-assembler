@@ -8,7 +8,7 @@ using System.Xml.Linq;
 using System.Data.OleDb;
 using System.Threading;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     public class HTMLDocument : HTMLBase
     {
@@ -80,7 +80,7 @@ namespace Patient_Education_Assembler
                         HtmlNode image = nodeFromAttribute(htmlNode, childNode, "urlXPath");
                         if (image != null)
                         {
-                            AddWebImage(image.GetAttributeValue("src", ""), boolAttribute(childNode, "align", "right"));
+                            AddWebImage(new Uri(image.GetAttributeValue("src", "")), boolAttribute(childNode, "align", "right"));
                         }
                         break;
 
@@ -147,7 +147,7 @@ namespace Patient_Education_Assembler
             return url.ToString().Substring(url.Scheme.Length).ToLower();
         }
 
-        public bool boolAttribute(XElement e, string name, string trueValue = "true", bool defaultValue = false)
+        static public bool boolAttribute(XElement e, string name, string trueValue = "true", bool defaultValue = false)
         {
             bool ret = defaultValue;
             XAttribute attr = e.Attribute(name);
@@ -156,7 +156,7 @@ namespace Patient_Education_Assembler
             return ret;
         }
 
-        public string stringAttribute(XElement e, string name)
+        static public string stringAttribute(XElement e, string name)
         {
             XAttribute attr = e.Attribute(name);
             if (attr != null)
@@ -233,7 +233,7 @@ namespace Patient_Education_Assembler
                             if (link.Length > 0)
                             {
                                 wantNewParagraph = true;
-                                AddWebImage(link);
+                                AddWebImage(new Uri(link));
                             }
 
                             break;
@@ -244,7 +244,7 @@ namespace Patient_Education_Assembler
                             // Accepted no implementation for now
                             break;
                         default:
-                            ParseIssues.Add(new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = currentRange.End });
+                            ParseIssues.Add(item: new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = currentRange.End });
                             break;
                     }
                     break;

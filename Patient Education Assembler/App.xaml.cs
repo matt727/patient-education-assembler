@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     /// <summary>
     /// Interaction logic for App.xaml

@@ -13,7 +13,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Threading;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     public abstract class PatientEducationObject : INotifyPropertyChanged
     {
@@ -21,7 +21,7 @@ namespace Patient_Education_Assembler
 
         public PatientEducationProvider ParentProvider { get; private set; }
 
-        private void OnPropertyChanged<T>([CallerMemberName]string caller = null)
+        private void OnPropertyChanged<T>([CallerMemberName] string caller = null)
         {
             // make sure only to call this if the value actually changes
 
@@ -194,11 +194,11 @@ namespace Patient_Education_Assembler
 
         public struct ParseIssue
         {
-            public string issue;
-            public int location;
+            public string issue { get; set; }
+            public int location { get; set; }
         }
 
-        public List<ParseIssue> ParseIssues { get; set; }
+        public List<ParseIssue> ParseIssues { get; }
 
         public int ParseIssueCount { get { return ParseIssues.Count; } }
 
@@ -309,7 +309,7 @@ namespace Patient_Education_Assembler
             {
                 wordLock.ExitWriteLock();
             }
-            
+
             wantNewLine = false;
             wantNewParagraph = false;
 
@@ -320,7 +320,7 @@ namespace Patient_Education_Assembler
         }
 
         protected void OpenDocument(string fileName)
-		{
+        {
             thisDoc = wordApp.Documents.Open(fileName);
         }
 
@@ -334,7 +334,10 @@ namespace Patient_Education_Assembler
         protected static bool inHighlight { get; set; }
         protected static int latestBlockStart { get; set; }
 
-        protected List<Tuple<int, int>> boldRanges, highlightRanges, emphasisRanges, underlineRanges;
+        protected List<Tuple<int, int>> boldRanges { get; private set; }
+        protected List<Tuple<int, int>> highlightRanges { get; private set; }
+        protected List<Tuple<int, int>> emphasisRanges { get; private set; }
+        protected List<Tuple<int, int>> underlineRanges { get; private set; }
 
         private static string ShowHexValue(string s)
         {
@@ -542,7 +545,7 @@ namespace Patient_Education_Assembler
             wantNewParagraph = true;
         }
 
-        protected void AddWebImage(string relUrl, bool rightAlign = false)
+        protected void AddWebImage(Uri relUrl, bool rightAlign = false)
         {
             if (wantNewParagraph)
                 NewParagraph();
@@ -606,13 +609,20 @@ namespace Patient_Education_Assembler
             if (!File.Exists(qrPath))
             {
                 // Generate matching QR code for this file, as we have not yet done so already
-                QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode(url.AbsoluteUri, QRCodeGenerator.ECCLevel.Q);
-                BitmapByteQRCode qrCode = new BitmapByteQRCode(qrCodeData);
-                byte[] qrCodeImage = qrCode.GetGraphic(20);
-                using (System.Drawing.Image image = System.Drawing.Image.FromStream(new MemoryStream(qrCodeImage)))
+                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 {
-                    image.Save(qrPath, System.Drawing.Imaging.ImageFormat.Png);  // Or Png
+                    QRCodeData qrCodeData = qrGenerator.CreateQrCode(url.AbsoluteUri, QRCodeGenerator.ECCLevel.Q);
+                    using (BitmapByteQRCode qrCode = new BitmapByteQRCode(qrCodeData))
+                    {
+                        byte[] qrCodeImage = qrCode.GetGraphic(20);
+                        using (MemoryStream ms = new MemoryStream(qrCodeImage))
+                        {
+                            using (System.Drawing.Image image = System.Drawing.Image.FromStream(ms))
+                            {
+                                image.Save(qrPath, System.Drawing.Imaging.ImageFormat.Png);  // Or Png
+                            }
+                        }
+                    }
                 }
             }
 
@@ -638,7 +648,7 @@ namespace Patient_Education_Assembler
             Title = input.Title;
             foreach (KeyValuePair<int, string> pair in input.Synonyms)
                 if (!Synonyms.ContainsKey(pair.Key))
-                    Synonyms.Append(pair);
+					_ = Synonyms.Append(pair);
 
             // This object now has a database entry and an index entry
             LoadStatus = LoadStatusEnum.DatabaseAndIndexMatched;

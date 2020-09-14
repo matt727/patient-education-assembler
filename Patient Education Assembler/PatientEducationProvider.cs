@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml.Linq;
 
-namespace Patient_Education_Assembler
+namespace PatientEducationAssembler
 {
     public class PatientEducationProvider
     {
@@ -9,11 +9,11 @@ namespace Patient_Education_Assembler
 
         public string contentProviderName { get; set; }
         public string contentBundleName { get; set; }
-        protected Uri contentProviderUrl;
-        protected Uri bundleUrl;
-        protected Uri sourceXML;
-        protected LoadDepth currentLoadDepth;
-        protected int loadCount;
+        protected Uri contentProviderUrl { get; set; }
+        protected Uri bundleUrl { get; set; }
+        protected Uri sourceXML { get; }
+        protected LoadDepth currentLoadDepth { get; set; }
+        protected int loadCount { get; set; }
 
         public PatientEducationProvider(Uri sourceXMLFile)
         {

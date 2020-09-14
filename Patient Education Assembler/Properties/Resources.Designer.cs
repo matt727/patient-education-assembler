@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Patient_Education_Assembler.Properties
+namespace PatientEducationAssembler.Properties
 {
 
 
