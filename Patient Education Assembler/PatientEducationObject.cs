@@ -545,7 +545,7 @@ namespace PatientEducationAssembler
             wantNewParagraph = true;
         }
 
-        protected void AddWebImage(Uri relUrl, bool rightAlign = false)
+        protected void AddWebImage(string relUrl, bool rightAlign = false)
         {
             if (wantNewParagraph)
                 NewParagraph();

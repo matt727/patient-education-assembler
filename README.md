@@ -29,3 +29,8 @@ If you want to check loading and rendering of one document, you can also click L
 To process all documents for a provider click Start This
 To process all documents for all providers click Start All
 To save information to the access database, ensure you click Finish
+
+
+Planned Features
+* Seamless opening of both rendered document and rendered source HTML
+* Avoid opening, parsing and saving a document whose cached file is earlier than the rendered document, and no re-parse has been forced / triggered

@@ -7,6 +7,7 @@ using HtmlAgilityPack;
 using System.Xml.Linq;
 using System.Data.OleDb;
 using System.Threading;
+using System.Net;
 
 namespace PatientEducationAssembler
 {
@@ -80,7 +81,7 @@ namespace PatientEducationAssembler
                         HtmlNode image = nodeFromAttribute(htmlNode, childNode, "urlXPath");
                         if (image != null)
                         {
-                            AddWebImage(new Uri(image.GetAttributeValue("src", "")), boolAttribute(childNode, "align", "right"));
+                            AddWebImage(WebUtility.HtmlDecode(image.GetAttributeValue("src", "")), boolAttribute(childNode, "align", "right"));
                         }
                         break;
 
@@ -160,14 +161,14 @@ namespace PatientEducationAssembler
         {
             XAttribute attr = e.Attribute(name);
             if (attr != null)
-                return System.Net.WebUtility.HtmlDecode(attr.Value.ToString());
+                return WebUtility.HtmlDecode(attr.Value.ToString());
             return "";
         }
 
         public HtmlNode nodeFromAttribute(HtmlNode n, XElement spec, string xpath)
         {
             if (spec.Attribute(xpath) != null)
-                return n.SelectSingleNode(System.Net.WebUtility.HtmlDecode(stringAttribute(spec, xpath)));
+                return n.SelectSingleNode(WebUtility.HtmlDecode(stringAttribute(spec, xpath)));
             return null;
         }
 
@@ -233,7 +234,7 @@ namespace PatientEducationAssembler
                             if (link.Length > 0)
                             {
                                 wantNewParagraph = true;
-                                AddWebImage(new Uri(link));
+                                AddWebImage(WebUtility.HtmlDecode(link));
                             }
 
                             break;
