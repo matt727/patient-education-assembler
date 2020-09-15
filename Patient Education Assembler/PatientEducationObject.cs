@@ -170,6 +170,30 @@ namespace PatientEducationAssembler
 
         public abstract void retrieveSourceDocument();
         public abstract void parseDocument();
+        public bool parsedSince(DateTime lastChange)
+		{
+            FileInfo parsedDocument = null;
+            FileInfo cachedSource = null;
+
+            // check that this document has been parsed since the last cache source file write and the last content provider specs update
+            if (isCached())
+            {
+                try
+                {
+                    cachedSource = new System.IO.FileInfo(cacheFileName());
+                    parsedDocument = new System.IO.FileInfo(rtfFileName());
+                    if (cachedSource.Exists && parsedDocument.Exists && 
+                        parsedDocument.LastWriteTime > lastChange && 
+                        parsedDocument.LastWriteTime > cachedSource.LastWriteTime)
+                        return true;
+                }
+                catch (System.IO.FileNotFoundException)
+                {
+                }
+            }
+
+            return false;
+        }
 
         public String ReviewStatus { get; }
 

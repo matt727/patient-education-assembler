@@ -285,24 +285,30 @@ namespace PatientEducationAssembler
         {
             SingleItemTab.IsSelected = true;
 
+
             HTMLDocument selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
-
-            if (selected.isCached())
-            try
+            if (selected != null)
             {
-                    Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
-                    MessageBox.Show(localUri.ToString());
-                    //SingleItemBrowser.NavigateToString(selected.cacheFileName());
-                    SingleItemBrowser.NavigateToString(localUri.ToString());
+                if (selected.isCached())
+                {
+                    try
+                    {
+                        Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
+                        MessageBox.Show(localUri.ToString());
+                        //SingleItemBrowser.NavigateToString(selected.cacheFileName());
+                        SingleItemBrowser.NavigateToString(localUri.ToString());
 
-                    // SingleItemBrowser.Navigate(selected.URL);
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show("Exception: " + ex.Message);
-            }
+                        // SingleItemBrowser.Navigate(selected.URL);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        MessageBox.Show("Exception: " + ex.Message);
+                    }
 
-            selected.showProcessedRTF();
+
+                    selected.showProcessedRTF();
+                }
+            }
         }
     }
 }

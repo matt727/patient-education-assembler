@@ -17,7 +17,7 @@ namespace PatientEducationAssembler
 {
     public class HTMLContentProvider : PatientEducationProvider, INotifyPropertyChanged
     {
-
+        
         public HTMLContentProvider(Uri sourceXMLFile)
             : base(sourceXMLFile)
         {

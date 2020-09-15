@@ -29,7 +29,8 @@ namespace PatientEducationAssembler
 
         public void retrieveAndParse(IProgress<int> reportProgress)
         {
-            retrieveAndParse();
+            if (!parsedSince(ParentProvider.LastSpecificationUpdate))
+                retrieveAndParse();
 
             reportProgress.Report(1);
         }
