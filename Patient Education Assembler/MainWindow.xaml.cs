@@ -310,5 +310,14 @@ namespace PatientEducationAssembler
                 }
             }
         }
-    }
+
+		private void IncludeAllAvailable_Click(object sender, RoutedEventArgs e)
+		{
+            foreach (PatientEducationObject edu in EducationDatabase.Self().EducationCollection)
+			{
+                if (edu.LoadStatus == PatientEducationObject.LoadStatusEnum.LoadedSucessfully)
+                    edu.Enabled = true;
+			}
+		}
+	}
 }

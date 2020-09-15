@@ -182,10 +182,14 @@ namespace PatientEducationAssembler
                 {
                     cachedSource = new System.IO.FileInfo(cacheFileName());
                     parsedDocument = new System.IO.FileInfo(rtfFileName());
-                    if (cachedSource.Exists && parsedDocument.Exists && 
-                        parsedDocument.LastWriteTime > lastChange && 
+                    if (cachedSource.Exists && parsedDocument.Exists &&
+                        parsedDocument.LastWriteTime > lastChange &&
                         parsedDocument.LastWriteTime > cachedSource.LastWriteTime)
+                    {
+                        // We have confirmed the document was previously rendered successfuly - reflect this in the UI
+                        LoadStatus = LoadStatusEnum.LoadedSucessfully;
                         return true;
+                    }
                 }
                 catch (System.IO.FileNotFoundException)
                 {

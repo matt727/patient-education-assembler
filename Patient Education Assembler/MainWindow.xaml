@@ -137,6 +137,8 @@
 
 						<Separator Width="20"/>
 						<Button IsEnabled="False" Content="Reload"/>
+						<Separator Width="20"/>
+						<Button x:Name="IncludeAllAvailable" Content="Include All Available" Width="115" Click="IncludeAllAvailable_Click"/>
 
 
 					</StackPanel>
