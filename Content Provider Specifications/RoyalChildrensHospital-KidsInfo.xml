@@ -3,7 +3,7 @@
   <ContentProvider name="Royal Children's Hospital" url="https://www.rch.org.au">
     <Bundle name="Kids Info"
             postfix = "Royal Children's Hospital"
-            url="https://www.rch.org.au/kidsinfo/">
+            url="https://www.rch.org.au/kidsinfo/fact_sheets/">
       <Document urlXPath="//div[@id = 'tabnav-letter-blocks']//a" synonymRegExp="^(?&lt;synonym&gt;.*)\(see >>(?&lt;title&gt;.*)\)$">
         <Image urlXPath="//img[@class = &quot;rch-logo&quot;]"/>
         <Title nodeXPath="//div[@id = 'rch-primary']//h1"/>
