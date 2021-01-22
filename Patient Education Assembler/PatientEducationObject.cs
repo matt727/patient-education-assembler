@@ -64,12 +64,15 @@ namespace PatientEducationAssembler
 
         public bool isCached()
         {
+            // If the file does not exist, it is not cached
             if (!File.Exists(cacheFileName()))
                 return false;
 
-            if (Properties.Settings.Default.ExpireCachedContent = false)
+            // If the file exists and we never expire cached content, then it is already cached.
+            if (Properties.Settings.Default.ExpireCachedContent == false)
                 return true;
 
+            //if the file exists and we are expiring content, it must be downloaded after the configured number of expiry days in the past
             return cacheDate() > (DateTime.Today.AddDays(0.0 - Properties.Settings.Default.CacheAge));
         }
 
