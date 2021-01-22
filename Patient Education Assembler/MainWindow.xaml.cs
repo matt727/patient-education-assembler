@@ -53,7 +53,8 @@ namespace PatientEducationAssembler
             setOutputDirectory(Properties.Settings.Default.OutputDirectory);
             setMaxWordInstances(Properties.Settings.Default.MaxWordInstances);
             setCacheAge(Properties.Settings.Default.CacheAge);
-
+            
+            ExpireCachedContent.IsChecked = Properties.Settings.Default.ExpireCachedContent;
             ShowWord.IsChecked = Properties.Settings.Default.AlwaysShowWord;
 
             ReportDocumentProgress = new Progress<int>(completed =>
@@ -69,7 +70,7 @@ namespace PatientEducationAssembler
                 Application.Current.Shutdown();
         }
 
-        ~MainWindow()
+		~MainWindow()
         {
             PatientEducationObject.cleanupWord();
         }
@@ -319,5 +320,11 @@ namespace PatientEducationAssembler
                     edu.Enabled = true;
 			}
 		}
-	}
+
+        private void ExpireCachedContent_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.ExpireCachedContent = (bool)ExpireCachedContent.IsChecked;
+            Properties.Settings.Default.Save();
+        }
+    }
 }

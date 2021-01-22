@@ -64,7 +64,13 @@ namespace PatientEducationAssembler
 
         public bool isCached()
         {
-            return File.Exists(cacheFileName()) && cacheDate() > (DateTime.Today.AddDays(0.0 - Properties.Settings.Default.CacheAge));
+            if (!File.Exists(cacheFileName()))
+                return false;
+
+            if (Properties.Settings.Default.ExpireCachedContent = false)
+                return true;
+
+            return cacheDate() > (DateTime.Today.AddDays(0.0 - Properties.Settings.Default.CacheAge));
         }
 
         public DateTime cacheDate()
