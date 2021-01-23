@@ -17,6 +17,7 @@ using System.Windows.Shapes;
 using WinForms = System.Windows.Forms;
 using System.Configuration;
 using System.Threading;
+using System.Drawing;
 
 namespace PatientEducationAssembler
 {
@@ -286,7 +287,6 @@ namespace PatientEducationAssembler
         {
             SingleItemTab.IsSelected = true;
 
-
             HTMLDocument selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
             if (selected != null)
             {
@@ -294,12 +294,9 @@ namespace PatientEducationAssembler
                 {
                     try
                     {
-                        Uri localUri = new Uri(("ms-appx-web:/" + selected.cacheFileName()).Replace("\\", "/"));
-                        MessageBox.Show(localUri.ToString());
-                        //SingleItemBrowser.NavigateToString(selected.cacheFileName());
-                        SingleItemBrowser.NavigateToString(localUri.ToString());
-
-                        // SingleItemBrowser.Navigate(selected.URL);
+                        Uri localUri = new Uri(System.IO.Path.Combine(Environment.CurrentDirectory, selected.cacheFileName()));
+                        //MessageBox.Show(localUri.ToString());
+                        SingleItemBrowser.Source = localUri;
                     }
                     catch (System.Exception ex)
                     {
@@ -309,6 +306,22 @@ namespace PatientEducationAssembler
 
                     selected.showProcessedRTF();
                 }
+
+                var screen = WinForms.Screen.PrimaryScreen;
+                if (screen != null)
+                {
+                    //MessageBox.Show(screen.WorkingArea.ToString());
+                    Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
+                    double dx = m.M11; // notice it's divided by 96 already
+                    double dy = m.M22; // notice it's divided by 96 already
+
+                    Top = screen.WorkingArea.Y / dy;
+                    Height = screen.WorkingArea.Height / dy;
+                    Left = screen.WorkingArea.X / dx;
+                    Width = (screen.WorkingArea.Width / 2) / dx;
+                }
+
+                selected.ShowDocument();
             }
         }
 

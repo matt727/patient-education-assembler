@@ -12,6 +12,8 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Diagnostics;
 using System.Threading;
+using System.Windows;
+using System.Windows.Media;
 
 namespace PatientEducationAssembler
 {
@@ -359,6 +361,41 @@ namespace PatientEducationAssembler
         protected void OpenDocument(string fileName)
         {
             thisDoc = wordApp.Documents.Open(fileName);
+        }
+
+        public void ShowDocument()
+		{
+            if (thisDoc == null)
+                return;
+
+            try
+            {
+                wordLock.EnterWriteLock();
+
+                Word.Window currentWindow = thisDoc.ActiveWindow;
+                var screen = System.Windows.Forms.Screen.PrimaryScreen;
+                if (currentWindow != null && screen != null)
+                {
+                    //MessageBox.Show(screen.WorkingArea.ToString());
+
+                    Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
+                    double dx = m.M11; // notice it's divided by 96 already
+                    double dy = m.M22; // notice it's divided by 96 already
+
+                    currentWindow.Top = (int)(screen.WorkingArea.Y / dy);
+                    currentWindow.Height = (int)(screen.WorkingArea.Height / dy);
+                    currentWindow.Left = (int)((screen.WorkingArea.X + (screen.WorkingArea.Width / 2)) / dx);
+                    currentWindow.Width = (int)((screen.WorkingArea.Width / 2) / dx);
+
+                    //MessageBox.Show("result: top " + currentWindow.Top + " height " + currentWindow.Height + " left " + currentWindow.Left + " width " + currentWindow.Width);
+
+                    currentWindow.Visible = true;
+                }
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+            }
         }
 
         internal void LoadSynonym(int synonymID, string synonym)
