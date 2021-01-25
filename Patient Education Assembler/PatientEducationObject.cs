@@ -429,7 +429,26 @@ namespace PatientEducationAssembler
                 Synonyms.Add(synonymID, synonym);
         }
 
-        protected static bool skipUntilNextH2 { get; set; }
+		internal void ScrollTo(int scrollPos)
+		{
+            try
+            {
+                wordLock.EnterWriteLock();
+
+                Word.Window currentWindow = thisDoc.ActiveWindow;
+                if (currentWindow != null)
+                {
+                    
+                    currentWindow.VerticalPercentScrolled = scrollPos;
+                }
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+            }
+        }
+
+		protected static bool skipUntilNextH2 { get; set; }
         protected static bool inHighlight { get; set; }
         protected static int latestBlockStart { get; set; }
 

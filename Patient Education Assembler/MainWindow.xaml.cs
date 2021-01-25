@@ -18,6 +18,8 @@ using WinForms = System.Windows.Forms;
 using System.Configuration;
 using System.Threading;
 using System.Drawing;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
 
 namespace PatientEducationAssembler
 {
@@ -71,6 +73,11 @@ namespace PatientEducationAssembler
             if (MessageBox.Show("Please ensure that you have the appropriate permission(s) from the content provider before you run this tool to download information from the internet",
                 "Patient Education Assembler", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.Cancel)
                 Application.Current.Shutdown();
+
+            SingleItemBrowser.NavigationCompleted += SingleItemBrowser_NavigationCompleted;
+
+            if (OutputDirectoryPath.Text.Length > 0)
+                ConnectToDatabaseImpl();
         }
 
 		~MainWindow()
@@ -192,6 +199,11 @@ namespace PatientEducationAssembler
 
         private void ConnectToDatabase_Click(object sender, RoutedEventArgs e)
         {
+            ConnectToDatabaseImpl();
+        }
+
+        private void ConnectToDatabaseImpl()
+		{
             EducationDatabase.Self().connectDatabase();
 
             ConnectToDatabase.IsEnabled = false;
@@ -329,5 +341,43 @@ namespace PatientEducationAssembler
             Properties.Settings.Default.ExpireCachedContent = (bool)ExpireCachedContent.IsChecked;
             Properties.Settings.Default.Save();
         }
-    }
+
+        private void SingleItemBrowser_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+        {
+            if (e.IsSuccess)
+            {
+                SingleItemBrowser.CoreWebView2.WebMessageReceived += Core_WebMessageReceived;
+
+                SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(
+                    @"var timer = null;
+                    function getVerticalScrollPercentage( elm ){
+                      var p = elm.parentNode;
+                      return Math.round((elm.scrollTop || p.scrollTop) / (p.scrollHeight - p.clientHeight ) * 100);
+                    }
+                    window.addEventListener('scroll', function() {
+                        if (timer !== null)
+                        {
+                            clearTimeout(timer);
+                        }
+                        timer = setTimeout(function() {
+                            var message = { ""ScrollPos"" : getVerticalScrollPercentage(document.body) };
+                            window.chrome.webview.postMessage(message);
+                        }, 150);
+                    }, false); ");
+
+            }
+        }
+
+        public class ScrollResponse
+		{
+            public int ScrollPos { get; set; }
+		}
+
+		private void Core_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+		{
+            ScrollResponse response = JsonConvert.DeserializeObject<ScrollResponse>(e.WebMessageAsJson);
+            //MessageBox.Show("Scrolled to " + response.ScrollPos);
+            currentReviewDocument.ScrollTo(response.ScrollPos);
+        }
+	}
 }
