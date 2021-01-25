@@ -29,6 +29,8 @@ namespace PatientEducationAssembler
         public static MainWindow thisWindow { get; private set; }
 
         private static Semaphore maxWordCounter;
+        public static PatientEducationObject currentReviewDocument { get; private set; }
+
         public static Semaphore getWordCounterSemaphore()
         {
             if (maxWordCounter == null)
@@ -296,7 +298,9 @@ namespace PatientEducationAssembler
                     {
                         Uri localUri = new Uri(System.IO.Path.Combine(Environment.CurrentDirectory, selected.cacheFileName()));
                         //MessageBox.Show(localUri.ToString());
-                        SingleItemBrowser.Source = localUri;
+                        //SingleItemBrowser.Source = localUri;
+
+                        SingleItemBrowser.Source = selected.URL;
                     }
                     catch (System.Exception ex)
                     {
@@ -304,24 +308,10 @@ namespace PatientEducationAssembler
                     }
 
 
-                    selected.showProcessedRTF();
+                    selected.ShowDocument(currentReviewDocument);
                 }
 
-                var screen = WinForms.Screen.PrimaryScreen;
-                if (screen != null)
-                {
-                    //MessageBox.Show(screen.WorkingArea.ToString());
-                    Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
-                    double dx = m.M11; // notice it's divided by 96 already
-                    double dy = m.M22; // notice it's divided by 96 already
-
-                    Top = screen.WorkingArea.Y / dy;
-                    Height = screen.WorkingArea.Height / dy;
-                    Left = screen.WorkingArea.X / dx;
-                    Width = (screen.WorkingArea.Width / 2) / dx;
-                }
-
-                selected.ShowDocument();
+                currentReviewDocument = selected;
             }
         }
 

@@ -346,16 +346,6 @@ namespace PatientEducationAssembler
 
         }
 
-		internal void showProcessedRTF()
-		{
-            wordLock.EnterWriteLock();
-
-            wordApp.Visible = true;
-            OpenDocument(rtfFileName());
-
-            wordLock.ExitWriteLock();
-        }
-
 		internal void mergeWith(HTMLDocument input)
         {
             base.mergeWith(input);

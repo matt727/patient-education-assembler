@@ -342,6 +342,10 @@ namespace PatientEducationAssembler
                 wordLock.EnterWriteLock();
 
                 thisDoc = wordApp.Documents.Add();
+                
+                if ((bool)MainWindow.thisWindow.ShowWord.IsChecked)
+                    thisDoc.ActiveWindow.Visible = false;
+                
                 currentRange = thisDoc.Range();
             }
             finally
@@ -363,31 +367,40 @@ namespace PatientEducationAssembler
             thisDoc = wordApp.Documents.Open(fileName);
         }
 
-        public void ShowDocument()
+        public void ShowDocument(PatientEducationObject previousOpenDocument)
 		{
-            if (thisDoc == null)
-                return;
-
             try
             {
                 wordLock.EnterWriteLock();
 
-                Word.Window currentWindow = thisDoc.ActiveWindow;
-                var screen = System.Windows.Forms.Screen.PrimaryScreen;
-                if (currentWindow != null && screen != null)
+                wordApp.Visible = true;
+
+                Rect currentWordPosition = new Rect();
+                if (wordApp.Documents.Count > 0)
                 {
-                    //MessageBox.Show(screen.WorkingArea.ToString());
+                    Word.Window oldWordDoc = wordApp.ActiveWindow;
+                    if (oldWordDoc != null && oldWordDoc.Visible == true)
+                    {
+                        currentWordPosition = new Rect(oldWordDoc.Left, oldWordDoc.Top, oldWordDoc.Width, oldWordDoc.Height);
 
-                    Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
-                    double dx = m.M11; // notice it's divided by 96 already
-                    double dy = m.M22; // notice it's divided by 96 already
+                        if (previousOpenDocument != null)
+                            previousOpenDocument.HideDocument();
+                    }
+                }
 
-                    currentWindow.Top = (int)(screen.WorkingArea.Y / dy);
-                    currentWindow.Height = (int)(screen.WorkingArea.Height / dy);
-                    currentWindow.Left = (int)((screen.WorkingArea.X + (screen.WorkingArea.Width / 2)) / dx);
-                    currentWindow.Width = (int)((screen.WorkingArea.Width / 2) / dx);
+                OpenDocument(rtfFileName());
 
-                    //MessageBox.Show("result: top " + currentWindow.Top + " height " + currentWindow.Height + " left " + currentWindow.Left + " width " + currentWindow.Width);
+                Word.Window currentWindow = thisDoc.ActiveWindow;
+                if (currentWindow != null)
+                {
+                    // Restore last Word window location and position to this window
+                    if (currentWordPosition.Height > 0)
+                    {
+                        currentWindow.Top = (int)currentWordPosition.Top;
+                        currentWindow.Height = (int)currentWordPosition.Height;
+                        currentWindow.Left = (int)currentWordPosition.Left;
+                        currentWindow.Width = (int)currentWordPosition.Width;
+                    }
 
                     currentWindow.Visible = true;
                 }
@@ -396,6 +409,18 @@ namespace PatientEducationAssembler
             {
                 wordLock.ExitWriteLock();
             }
+        }
+
+        internal void HideDocument()
+		{
+            if (thisDoc != null)
+            {
+                if (!thisDoc.Saved)
+                    thisDoc.Save();
+            }
+
+            thisDoc.Close(Word.WdSaveOptions.wdPromptToSaveChanges);
+            thisDoc = null;
         }
 
         internal void LoadSynonym(int synonymID, string synonym)
