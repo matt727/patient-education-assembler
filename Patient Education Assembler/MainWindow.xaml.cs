@@ -74,7 +74,11 @@ namespace PatientEducationAssembler
                 "Patient Education Assembler", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.Cancel)
                 Application.Current.Shutdown();
 
-            SingleItemBrowser.NavigationCompleted += SingleItemBrowser_NavigationCompleted;
+            //SingleItemBrowser.NavigationCompleted += SingleItemBrowser_NavigationCompleted;
+            // Force load of the Chromium browser components, to load more quickly and allow one time setup
+            SingleItemBrowser.EnsureCoreWebView2Async();
+			SingleItemBrowser.CoreWebView2Ready += SingleItemBrowser_CoreWebView2Ready;
+			SingleItemBrowser.ContentLoading += SingleItemBrowser_ContentLoading;
 
             if (OutputDirectoryPath.Text.Length > 0)
                 ConnectToDatabaseImpl();
@@ -342,30 +346,38 @@ namespace PatientEducationAssembler
             Properties.Settings.Default.Save();
         }
 
-        private void SingleItemBrowser_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+
+        private void SingleItemBrowser_CoreWebView2Ready(object sender, EventArgs e)
+        {
+            SingleItemBrowser.CoreWebView2.WebMessageReceived += Core_WebMessageReceived;
+        }
+
+        /*private void SingleItemBrowser_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
         {
             if (e.IsSuccess)
             {
-                SingleItemBrowser.CoreWebView2.WebMessageReceived += Core_WebMessageReceived;
-
-                SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(
-                    @"var timer = null;
-                    function getVerticalScrollPercentage( elm ){
-                      var p = elm.parentNode;
-                      return Math.round((elm.scrollTop || p.scrollTop) / (p.scrollHeight - p.clientHeight ) * 100);
-                    }
-                    window.addEventListener('scroll', function() {
-                        if (timer !== null)
-                        {
-                            clearTimeout(timer);
-                        }
-                        timer = setTimeout(function() {
-                            var message = { ""ScrollPos"" : getVerticalScrollPercentage(document.body) };
-                            window.chrome.webview.postMessage(message);
-                        }, 150);
-                    }, false); ");
-
+                //SingleItemBrowser_RequestScrollNotifications();
             }
+        }*/
+
+        private void SingleItemBrowser_ContentLoading(object sender, CoreWebView2ContentLoadingEventArgs e)
+		{
+            SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(
+                @"var timer = null;
+                function getVerticalScrollPercentage( elm ){
+                    var p = elm.parentNode;
+                    return Math.round((elm.scrollTop || p.scrollTop) / (p.scrollHeight - p.clientHeight ) * 100);
+                }
+                window.addEventListener('scroll', function() {
+                    if (timer !== null)
+                    {
+                        clearTimeout(timer);
+                    }
+                    timer = setTimeout(function() {
+                        var message = { ""ScrollPos"" : getVerticalScrollPercentage(document.body) };
+                        window.chrome.webview.postMessage(message);
+                    }, 150);
+                }, false); ");
         }
 
         public class ScrollResponse
@@ -376,7 +388,7 @@ namespace PatientEducationAssembler
 		private void Core_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
 		{
             ScrollResponse response = JsonConvert.DeserializeObject<ScrollResponse>(e.WebMessageAsJson);
-            //MessageBox.Show("Scrolled to " + response.ScrollPos);
+            //MessageBox.Show("Scrolling to " + response.ScrollPos);
             currentReviewDocument.ScrollTo(response.ScrollPos);
         }
 	}

@@ -403,6 +403,13 @@ namespace PatientEducationAssembler
                     }
 
                     currentWindow.Visible = true;
+
+                    // Set Web View to remove page (printed) style viewing
+                    Word.View currentView = currentWindow.View;
+                    if (currentView != null)
+					{
+                        currentView.Type = Word.WdViewType.wdWebView;
+					}
                 }
             }
             finally
