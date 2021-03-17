@@ -116,13 +116,13 @@ namespace PatientEducationAssembler
             TrimAndAddText(text);
         }
 
-        //private static System.Text.RegularExpressions.Regex removeWS = new System.Text.RegularExpressions.Regex(@"\s*");
+        private static System.Text.RegularExpressions.Regex removeWS = new System.Text.RegularExpressions.Regex(@"\s{2,}");
 
         static protected string ConvertHtmlText(string input)
         {
             string ret = WebUtility.HtmlDecode(input);
-            //removeWS.Replace(ret, @" ");
             ret = ret.Replace('\n', ' ').Replace('\r', ' ').Replace('\t', ' ');//.Trim();
+            ret = removeWS.Replace(ret, @" ");
             return ret;
         }
     }

@@ -91,7 +91,7 @@
 						<ComboBoxItem Content="Review only on Unsupported Tag"/>
 						<ComboBoxItem Content="Never Review"/>
 					</ComboBox>
-					
+
 					<Label Content="Cache Behaviour " HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="5" Grid.Column="0"/>
 					<Grid Grid.Column="2" Grid.Row="5">
 						<Grid.ColumnDefinitions>
@@ -102,7 +102,7 @@
 						<CheckBox x:Name="ExpireCachedContent" Content="Automatically expire downloaded content after" Grid.Row="0" Grid.Column="0" Checked="ExpireCachedContent_CheckedChanged" Unchecked="ExpireCachedContent_CheckedChanged"/>
 						<Slider x:Name="CacheAge" VerticalAlignment="Top" Value="14" Maximum="90" TickFrequency="10" SmallChange="1" TickPlacement="BottomRight" Minimum="1" LargeChange="10" ValueChanged="CacheAge_ValueChanged" Grid.Row="0" Grid.Column="1"/>
 						<TextBox x:Name="CacheAgeText" Text="14 day(s)" Grid.Row="0" Grid.Column="2"/>
-						
+
 					</Grid>
 
 					<Label Grid.Row="6" Content="Your Organisation"/>
@@ -166,13 +166,35 @@
 			<TabItem x:Name="SingleItemTab" Header="Single Item">
 				<DockPanel>
 					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-						<Button Content="Exclude Item"/>
+						<Label Content="Nav Mode:"/>
+						<ComboBox Width="120">
+							<ComboBoxItem Content="Issues Only" IsSelected="True"/>
+							<ComboBoxItem Content="All"/>
+						</ComboBox>
+						<Separator Width="20"/>
+						<Button Content="|&lt;" Width="20"/>
+						<Button Content="&lt;" Width="20"/>
+						<Label Content="Issue"/>
+						<Button x:Name="NextDocument" Content="&gt;" Width="20" Click="NextDocument_Click"/>
+						<Button Content="&gt;|" Width="20"/>
 						<Separator Width="20"/>
 						<Label Content="Table Handling:"/>
 						<ComboBox Width="120">
 							<ComboBoxItem Content="Flatten"/>
 						</ComboBox>
+						<Separator Width="20"/>
+						<Button Content="Exclude Item"/>
+						<Separator Width="20"/>
+						<Button Content="Mark As Reviewed"/>
 					</StackPanel>
+					<ListView x:Name="IssueList" Height="100" VerticalAlignment="Top" DockPanel.Dock="Bottom">
+						<ListView.View>
+							<GridView>
+								<GridViewColumn Header="Line" Width="40"/>
+								<GridViewColumn Header="Issue" Width="600"/>
+							</GridView>
+						</ListView.View>
+					</ListView>
 					<wv2:WebView2 Name="SingleItemBrowser" Source="https://www.microsoft.com"/>
 				</DockPanel>
 			</TabItem>

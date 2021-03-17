@@ -17,6 +17,11 @@ using System.Windows.Media;
 
 namespace PatientEducationAssembler
 {
+    public class ParseIssue
+    {
+        public string issue { get; set; }
+        public int location { get; set; }
+	}
     public abstract class PatientEducationObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -231,12 +236,6 @@ namespace PatientEducationAssembler
 
         public bool DocumentParsed { get; set; }
 
-        public struct ParseIssue
-        {
-            public string issue { get; set; }
-            public int location { get; set; }
-        }
-
         public List<ParseIssue> ParseIssues { get; }
 
         public int ParseIssueCount { get { return ParseIssues.Count; } }
@@ -343,7 +342,7 @@ namespace PatientEducationAssembler
 
                 thisDoc = wordApp.Documents.Add();
                 
-                if ((bool)MainWindow.thisWindow.ShowWord.IsChecked)
+                if (!(bool)Properties.Settings.Default.AlwaysShowWord)
                     thisDoc.ActiveWindow.Visible = false;
                 
                 currentRange = thisDoc.Range();
@@ -388,7 +387,8 @@ namespace PatientEducationAssembler
                     }
                 }
 
-                OpenDocument(rtfFileName());
+                if (thisDoc == null)
+                    OpenDocument(rtfFileName());
 
                 Word.Window currentWindow = thisDoc.ActiveWindow;
                 if (currentWindow != null)

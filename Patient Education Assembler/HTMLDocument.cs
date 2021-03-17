@@ -194,6 +194,7 @@ namespace PatientEducationAssembler
                         case "h4":
                         case "h5":
                         case "h6":
+                        case "thead":
                             NewParagraph("Heading 3");
                             break;
                         case "blockspan":
@@ -240,9 +241,18 @@ namespace PatientEducationAssembler
                             break;
                         case "li":
                             break;
+                        case "td":
+                            wantNewParagraph = true;
+                            break;
                         case "span":
                         case "a":
+                        case "tbody":
+                        case "tr":
+                        case "script":
                             // Accepted no implementation for now
+                            break;
+                        case "table":
+                            ParseIssues.Add(item: new ParseIssue { issue = "Table Encountered, review needed", location = currentRange.End });
                             break;
                         default:
                             ParseIssues.Add(item: new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = currentRange.End });

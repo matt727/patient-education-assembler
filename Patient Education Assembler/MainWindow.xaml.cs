@@ -74,10 +74,9 @@ namespace PatientEducationAssembler
                 "Patient Education Assembler", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.Cancel)
                 Application.Current.Shutdown();
 
-            //SingleItemBrowser.NavigationCompleted += SingleItemBrowser_NavigationCompleted;
             // Force load of the Chromium browser components, to load more quickly and allow one time setup
             SingleItemBrowser.EnsureCoreWebView2Async();
-			SingleItemBrowser.CoreWebView2Ready += SingleItemBrowser_CoreWebView2Ready;
+			SingleItemBrowser.CoreWebView2InitializationCompleted += SingleItemBrowser_CoreWebView2InitializationCompleted;
 			SingleItemBrowser.ContentLoading += SingleItemBrowser_ContentLoading;
 
             if (OutputDirectoryPath.Text.Length > 0)
@@ -308,15 +307,22 @@ namespace PatientEducationAssembler
             HTMLDocument selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
             if (selected != null)
             {
-                if (selected.isCached())
+                SelectItem(selected);
+            }
+        }
+
+        internal void SelectItem(PatientEducationObject item)
+		{
+            {
+                if (item.isCached())
                 {
                     try
                     {
-                        Uri localUri = new Uri(System.IO.Path.Combine(Environment.CurrentDirectory, selected.cacheFileName()));
+                        Uri localUri = new Uri(System.IO.Path.Combine(Environment.CurrentDirectory, item.cacheFileName()));
                         //MessageBox.Show(localUri.ToString());
                         //SingleItemBrowser.Source = localUri;
 
-                        SingleItemBrowser.Source = selected.URL;
+                        SingleItemBrowser.Source = item.URL;
                     }
                     catch (System.Exception ex)
                     {
@@ -324,10 +330,16 @@ namespace PatientEducationAssembler
                     }
 
 
-                    selected.ShowDocument(currentReviewDocument);
+                    item.ShowDocument(currentReviewDocument);
                 }
 
-                currentReviewDocument = selected;
+                currentReviewDocument = item;
+
+                IssueList.Items.Clear();
+                foreach (ParseIssue i in currentReviewDocument.ParseIssues)
+                {
+                    IssueList.Items.Add(i.issue);
+                }
             }
         }
 
@@ -347,18 +359,10 @@ namespace PatientEducationAssembler
         }
 
 
-        private void SingleItemBrowser_CoreWebView2Ready(object sender, EventArgs e)
+        private void SingleItemBrowser_CoreWebView2InitializationCompleted(object sender, EventArgs e)
         {
             SingleItemBrowser.CoreWebView2.WebMessageReceived += Core_WebMessageReceived;
         }
-
-        /*private void SingleItemBrowser_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
-        {
-            if (e.IsSuccess)
-            {
-                //SingleItemBrowser_RequestScrollNotifications();
-            }
-        }*/
 
         private void SingleItemBrowser_ContentLoading(object sender, CoreWebView2ContentLoadingEventArgs e)
 		{
@@ -390,6 +394,21 @@ namespace PatientEducationAssembler
             ScrollResponse response = JsonConvert.DeserializeObject<ScrollResponse>(e.WebMessageAsJson);
             //MessageBox.Show("Scrolling to " + response.ScrollPos);
             currentReviewDocument.ScrollTo(response.ScrollPos);
+        }
+
+		private void NextDocument_Click(object sender, RoutedEventArgs e)
+		{
+            int currentIndex = EducationDatabase.Self().EducationCollection.IndexOf(currentReviewDocument);
+            for (int i = currentIndex + 1; i < EducationDatabase.Self().EducationCollection.Count; i++)
+			{
+                if (EducationDatabase.Self().EducationCollection[i].ParseIssueCount > 0)
+                {
+                    SelectItem(EducationDatabase.Self().EducationCollection[i]);
+                    return;
+                }
+            }
+
+            MessageBox.Show("No more documents with parsue issues found");
         }
 	}
 }

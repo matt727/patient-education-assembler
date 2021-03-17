@@ -186,7 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack">
-      <Version>1.11.29</Version>
+      <Version>1.11.31</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers">
       <Version>3.3.2</Version>
@@ -194,7 +194,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Web.WebView2">
-      <Version>1.0.664.37</Version>
+      <Version>1.0.774.44</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.3</Version>
@@ -203,7 +203,7 @@
       <Version>1.4.1</Version>
     </PackageReference>
     <PackageReference Include="System.Drawing.Common">
-      <Version>5.0.0</Version>
+      <Version>5.0.2</Version>
     </PackageReference>
     <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml">
       <Version>4.7.0</Version>
