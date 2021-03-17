@@ -183,9 +183,9 @@
 							<ComboBoxItem Content="Flatten"/>
 						</ComboBox>
 						<Separator Width="20"/>
-						<Button Content="Exclude Item"/>
+						<Button x:Name="ExcludeDocument" Content="Exclude Item" Click="ExcludeDocument_Click"/>
 						<Separator Width="20"/>
-						<Button Content="Mark As Reviewed"/>
+						<Button x:Name="MarkReviewed" Content="Mark As Reviewed" Click="MarkReviewed_Click"/>
 					</StackPanel>
 					<ListView x:Name="IssueList" Height="100" VerticalAlignment="Top" DockPanel.Dock="Bottom">
 						<ListView.View>

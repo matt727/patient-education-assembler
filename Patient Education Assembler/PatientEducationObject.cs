@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
+using System.Globalization;
 
 namespace PatientEducationAssembler
 {
@@ -182,7 +183,19 @@ namespace PatientEducationAssembler
             RemovedByContentProvider
         }
         private LoadStatusEnum currentLoadStatus;
-        public LoadStatusEnum LoadStatus { get { return currentLoadStatus; } protected set { currentLoadStatus = value; OnPropertyChanged<String>(Status); } }
+        public LoadStatusEnum LoadStatus
+        {
+            get
+            {
+                return currentLoadStatus;
+            } 
+            
+            protected set
+            {
+                currentLoadStatus = value;
+                OnPropertyChanged<String>(Status);
+            }
+        }
 
         public abstract void retrieveSourceDocument();
         public abstract void parseDocument();
@@ -194,28 +207,78 @@ namespace PatientEducationAssembler
             // check that this document has been parsed since the last cache source file write and the last content provider specs update
             if (isCached())
             {
-                try
+                cachedSource = new System.IO.FileInfo(cacheFileName());
+                if (cachedSource.Exists && LastParse != null && LastParse > lastChange &&
+                    LastParse > cachedSource.LastWriteTime)
                 {
-                    cachedSource = new System.IO.FileInfo(cacheFileName());
-                    parsedDocument = new System.IO.FileInfo(rtfFileName());
-                    if (cachedSource.Exists && parsedDocument.Exists &&
-                        parsedDocument.LastWriteTime > lastChange &&
-                        parsedDocument.LastWriteTime > cachedSource.LastWriteTime)
-                    {
-                        // We have confirmed the document was previously rendered successfuly - reflect this in the UI
-                        LoadStatus = LoadStatusEnum.LoadedSucessfully;
-                        return true;
-                    }
-                }
-                catch (System.IO.FileNotFoundException)
-                {
+                    // We have confirmed the document was previously rendered successfuly - reflect this in the UI
+                    LoadStatus = LoadStatusEnum.LoadedSucessfully;
+                    return true;
                 }
             }
 
             return false;
         }
 
-        public String ReviewStatus { get; }
+        public bool EverReviewed { get; private set; }
+        private DateTime lastReview;
+        public DateTime LastReview
+        { 
+            get 
+            { 
+                return lastReview; 
+            }
+            set
+            { 
+                lastReview = value;
+                EverReviewed = true;
+                OnPropertyChanged<string>(ReviewStatus);
+            }
+        }
+
+        private DateTime lastParse;
+        public DateTime LastParse {
+            get {
+                if (lastParse == null)
+                    try
+                    {
+                        FileInfo parsedDocument = new System.IO.FileInfo(rtfFileName());
+                        if (parsedDocument.Exists)
+                            lastParse = parsedDocument.LastWriteTime;
+                    }
+                    catch (System.IO.FileNotFoundException)
+                    {
+                    }
+
+                return lastParse;
+            }
+        }
+
+        public bool ReviewedSinceLastRetrieval()
+		{
+            if (LastParse != null  && EverReviewed)
+                return LastParse < LastReview;
+            else
+                return false;
+        }
+
+        public String ReviewStatus
+		{
+            get {
+                if (ReviewedSinceLastRetrieval())
+				{
+                    return "Current [" + LastReview.ToString(CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern) + "]";
+				}
+                else if (EverReviewed)
+				{
+                    return "Previously [" + LastReview.ToString(CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern) + "]";
+                }
+                else
+				{
+                    return "Never";
+				}
+			}
+		}
 
         public Guid ThisGUID { get; set; }
 
@@ -315,6 +378,12 @@ namespace PatientEducationAssembler
             ThisGUID = new Guid(reader.GetString((int)EducationDatabase.MetadataColumns.GUID));
             FileName = ThisGUID + ".rtf";
 
+            String dateType = reader.GetDataTypeName((int)EducationDatabase.MetadataColumns.LastReview);
+			if (!reader.IsDBNull((int)EducationDatabase.MetadataColumns.LastReview))
+			{
+                LastReview = reader.GetDateTime((int)EducationDatabase.MetadataColumns.LastReview);
+			}
+            
             Synonyms = new Dictionary<int, string>();
 
             createWordApp();
@@ -460,7 +529,13 @@ namespace PatientEducationAssembler
         protected static int latestBlockStart { get; set; }
 
         protected List<Tuple<int, int>> boldRanges { get; private set; }
-        protected List<Tuple<int, int>> highlightRanges { get; private set; }
+
+		internal void SetReviewed()
+		{
+            LastReview = DateTime.Now;
+		}
+
+		protected List<Tuple<int, int>> highlightRanges { get; private set; }
         protected List<Tuple<int, int>> emphasisRanges { get; private set; }
         protected List<Tuple<int, int>> underlineRanges { get; private set; }
 
@@ -791,7 +866,7 @@ namespace PatientEducationAssembler
                     metaData.CommandText = "UPDATE [DocumentAssemblerMetadata] SET " +
                         "[FileName] = @fn, [Doc_Lang_ID] = @doclang, [Document_Name] = @title, [Language_ID] = @lang, " +
                         "[GenderID] = @gender, [AgeID] = @age, [URL] = @url, [Enabled] = @enabled, " +
-                        "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid " +
+                        "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid, [LastReview] = @lastrev " +
                         "WHERE [Doc_ID] = @doc";
                 }
                 else
@@ -801,10 +876,10 @@ namespace PatientEducationAssembler
 
                     metaData.CommandText = "INSERT INTO [DocumentAssemblerMetadata] (" +
                         "[FileName], [Doc_Lang_Id], [Document_Name], [Language_ID], " +
-                        "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [Doc_ID]" +
+                        "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [LastReview], [Doc_ID]" +
                         ") " +
                         "VALUES (@fn, @doclang, @title, @lang, " +
-                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @doc" +
+                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @lastrev, @doc" +
                         ")";
                 }
 
@@ -819,6 +894,17 @@ namespace PatientEducationAssembler
                 metaData.Parameters.Add("@provider", OleDbType.VarChar, 255).Value = ParentProvider.contentProviderName;
                 metaData.Parameters.Add("@bundle", OleDbType.VarChar, 255).Value = ParentProvider.contentBundleName;
                 metaData.Parameters.Add("@thisguid", OleDbType.VarChar, 255).Value = ThisGUID.ToString();
+                
+                if (EverReviewed)
+                {
+                    metaData.Parameters.Add("@lastrev", OleDbType.DBDate).Value = LastReview;
+                }
+                else
+                {
+                    metaData.Parameters.Add("@lastrev", OleDbType.DBDate).Value = DBNull.Value;
+                }
+
+                // Must be last
                 metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
 
                 metaData.ExecuteNonQuery();

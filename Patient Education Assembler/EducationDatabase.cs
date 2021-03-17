@@ -91,7 +91,8 @@ namespace PatientEducationAssembler
             Enabled,
             ContentProvider,
             Bundle,
-            GUID
+            GUID,
+            LastReview
         };
 
         public enum SynonymColumns

@@ -410,5 +410,21 @@ namespace PatientEducationAssembler
 
             MessageBox.Show("No more documents with parsue issues found");
         }
+
+		private void ExcludeDocument_Click(object sender, RoutedEventArgs e)
+		{
+            if (currentReviewDocument != null)
+			{
+                currentReviewDocument.Enabled = false;
+			}
+        }
+
+		private void MarkReviewed_Click(object sender, RoutedEventArgs e)
+		{
+            if (currentReviewDocument != null)
+            {
+                currentReviewDocument.SetReviewed();
+            }
+        }
 	}
 }
