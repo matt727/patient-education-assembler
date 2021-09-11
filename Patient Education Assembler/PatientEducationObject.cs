@@ -221,6 +221,7 @@ namespace PatientEducationAssembler
         }
 
         public bool EverReviewed { get; private set; }
+
         private DateTime lastReview;
         public DateTime LastReview
         { 
@@ -263,22 +264,25 @@ namespace PatientEducationAssembler
         }
 
         public String ReviewStatus
-		{
+        {
             get {
                 if (ReviewedSinceLastRetrieval())
-				{
+                {
                     return "Current [" + LastReview.ToString(CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern) + "]";
-				}
+                }
                 else if (EverReviewed)
-				{
+                {
                     return "Previously [" + LastReview.ToString(CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern) + "]";
                 }
                 else
-				{
+                {
                     return "Never";
-				}
-			}
-		}
+                }
+            }
+        }
+
+        // Did this object previously require manual intervention during review?
+        public Boolean RequiredManualIntervention { get; set; }
 
         public Guid ThisGUID { get; set; }
 
@@ -383,12 +387,29 @@ namespace PatientEducationAssembler
 			{
                 LastReview = reader.GetDateTime((int)EducationDatabase.MetadataColumns.LastReview);
 			}
-            
+
+            RequiredManualIntervention = reader.GetBoolean((int)EducationDatabase.MetadataColumns.RequiredManualIntervention);
+
             Synonyms = new Dictionary<int, string>();
 
             createWordApp();
 
             ParseIssues = new List<ParseIssue>();
+
+            using (OleDbCommand cmd = new OleDbCommand("Select * FROM DocumentAssemblerParsing WHERE [Doc_ID] = @doc", EducationDatabase.conn))
+            {
+                cmd.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
+
+                OleDbDataReader issueReader = cmd.ExecuteReader();
+                while (issueReader.Read())
+                {
+                    String issueDesc = issueReader.GetString((int)EducationDatabase.ParseIssueColumns.Issue_Desc);
+                    int issueLoc = (int)issueReader.GetDouble((int)EducationDatabase.ParseIssueColumns.Issue_Loc);
+
+                    ParseIssues.Add(new ParseIssue{ issue = issueDesc, location = issueLoc });
+                }
+                issueReader.Close();
+            }
         }
 
         public static void createWordApp()
@@ -866,8 +887,8 @@ namespace PatientEducationAssembler
                     metaData.CommandText = "UPDATE [DocumentAssemblerMetadata] SET " +
                         "[FileName] = @fn, [Doc_Lang_ID] = @doclang, [Document_Name] = @title, [Language_ID] = @lang, " +
                         "[GenderID] = @gender, [AgeID] = @age, [URL] = @url, [Enabled] = @enabled, " +
-                        "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid, [LastReview] = @lastrev " +
-                        "WHERE [Doc_ID] = @doc";
+                        "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid, [LastReview] = @lastrev, " +
+                        "[RequiredManualIntervention] = @manualIntervention WHERE [Doc_ID] = @doc";
                 }
                 else
                 {
@@ -876,10 +897,10 @@ namespace PatientEducationAssembler
 
                     metaData.CommandText = "INSERT INTO [DocumentAssemblerMetadata] (" +
                         "[FileName], [Doc_Lang_Id], [Document_Name], [Language_ID], " +
-                        "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [LastReview], [Doc_ID]" +
-                        ") " +
+                        "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [LastReview], " +
+                        "[RequiredManualIntervention], [Doc_ID]) " +
                         "VALUES (@fn, @doclang, @title, @lang, " +
-                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @lastrev, @doc" +
+                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @lastrev, @manualIntervention, @doc" +
                         ")";
                 }
 
@@ -894,7 +915,7 @@ namespace PatientEducationAssembler
                 metaData.Parameters.Add("@provider", OleDbType.VarChar, 255).Value = ParentProvider.contentProviderName;
                 metaData.Parameters.Add("@bundle", OleDbType.VarChar, 255).Value = ParentProvider.contentBundleName;
                 metaData.Parameters.Add("@thisguid", OleDbType.VarChar, 255).Value = ThisGUID.ToString();
-                
+
                 if (EverReviewed)
                 {
                     metaData.Parameters.Add("@lastrev", OleDbType.DBDate).Value = LastReview;
@@ -904,11 +925,28 @@ namespace PatientEducationAssembler
                     metaData.Parameters.Add("@lastrev", OleDbType.DBDate).Value = DBNull.Value;
                 }
 
+                metaData.Parameters.Add("@manualIntervention", OleDbType.Boolean).Value = RequiredManualIntervention;
+
                 // Must be last
                 metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
 
                 metaData.ExecuteNonQuery();
 
+                // Now, save any parse issues.  This table is truncated before saving... so just insert them all
+                foreach (ParseIssue issue in ParseIssues)
+				{
+                    OleDbCommand insertIssue = conn.CreateCommand();
+                    insertIssue.CommandText = "INSERT INTO [DocumentAssemblerParsing] (" +
+                        "[Doc_ID], [Issue_Loc], [Issue_Description]) " +
+                        "VALUES (@doc, @issueloc, @issuedesc" +
+                        ")";
+                    insertIssue.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
+                    insertIssue.Parameters.Add("@issueloc", OleDbType.Double).Value = (double)issue.location;
+                    insertIssue.Parameters.Add("@issuedesc", OleDbType.VarChar, 255).Value = issue.issue;
+
+                    insertIssue.ExecuteNonQuery();
+                }
+            
                 bool inDB = false;
                 if (FromDatabase)
                 {

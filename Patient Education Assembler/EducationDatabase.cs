@@ -76,7 +76,7 @@ namespace PatientEducationAssembler
         public string DisclaimerFooter { get; set; }
 
 
-        static OleDbConnection conn;
+        public static OleDbConnection conn;
 
         public enum MetadataColumns
         {
@@ -92,8 +92,16 @@ namespace PatientEducationAssembler
             ContentProvider,
             Bundle,
             GUID,
-            LastReview
+            LastReview,
+            RequiredManualIntervention
         };
+
+        public enum ParseIssueColumns
+		{
+            Doc_ID = 0,
+            Issue_Loc,
+            Issue_Desc
+		};
 
         public enum SynonymColumns
         {
@@ -255,6 +263,11 @@ namespace PatientEducationAssembler
 
         public void SaveToDatabase()
         {
+            // Clear the parse issue table, so we can just concentrate on filling it up with current information
+            OleDbCommand clearIssues = conn.CreateCommand();
+            clearIssues.CommandText = "DELETE FROM [DocumentAssemblerParsing]";
+            clearIssues.ExecuteNonQuery();
+
             foreach (PatientEducationObject doc in EducationCollection)
             {
                 doc.SaveToDatabase(conn);
