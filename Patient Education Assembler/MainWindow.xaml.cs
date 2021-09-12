@@ -185,13 +185,18 @@ namespace PatientEducationAssembler
 
         private void ButtonParseOne_Click(object sender, RoutedEventArgs e)
         {
+            PrepareToParse();
+
+            EducationDatabase.Self().CurrentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.OneDocument);
+        }
+
+        private void PrepareToParse()
+		{
             EducationDatabase.Self().DisclaimerFooter = DisclaimerTextBox.Text;
             DisclaimerTextBox.IsEnabled = false;
 
             EducationDatabase.Self().OrganisationName = MainWindow.thisWindow.OrganisationName.Text;
             OrganisationName.IsEnabled = false;
-
-            EducationDatabase.Self().CurrentProvider.loadSpecifications(HTMLContentProvider.LoadDepth.OneDocument);
         }
 
         private void ShowWord_CheckedChanged(object sender, EventArgs e)
@@ -268,7 +273,10 @@ namespace PatientEducationAssembler
         private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
             EducationDatabase.Self().SaveToDatabase();
-        }
+
+            MessageBox.Show("Updates saved to database",
+                "Patient Education Assembler", MessageBoxButton.OK, MessageBoxImage.Information);
+		}
 
         private void WordInstances_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -329,17 +337,27 @@ namespace PatientEducationAssembler
                         MessageBox.Show("Exception: " + ex.Message);
                     }
 
-
                     item.ShowDocument(currentReviewDocument);
                 }
 
                 currentReviewDocument = item;
 
-                IssueList.Items.Clear();
+                LoadIssues();
+            }
+        }
+
+        private void LoadIssues()
+		{
+            IssueList.Items.Clear();
+
+            if (currentReviewDocument.ParseIssues.Count > 0)
+            {
                 foreach (ParseIssue i in currentReviewDocument.ParseIssues)
                 {
                     IssueList.Items.Add(i);
                 }
+
+                ShowIssue(currentReviewDocument.ParseIssues[0]);
             }
         }
 
@@ -398,10 +416,15 @@ namespace PatientEducationAssembler
 
 		private void NextDocument_Click(object sender, RoutedEventArgs e)
 		{
+            OpenNextDocument();
+        }
+
+        private void OpenNextDocument()
+		{
             int currentIndex = EducationDatabase.Self().EducationCollection.IndexOf(currentReviewDocument);
             for (int i = currentIndex + 1; i < EducationDatabase.Self().EducationCollection.Count; i++)
-			{
-                if (EducationDatabase.Self().EducationCollection[i].ParseIssueCount > 0)
+            {
+                if (NavMode.SelectedItem.ToString() == "All" || EducationDatabase.Self().EducationCollection[i].ParseIssueCount > 0)
                 {
                     SelectItem(EducationDatabase.Self().EducationCollection[i]);
                     return;
@@ -424,6 +447,8 @@ namespace PatientEducationAssembler
             if (currentReviewDocument != null)
             {
                 currentReviewDocument.SetReviewed();
+
+                OpenNextDocument();
             }
         }
 
@@ -431,13 +456,33 @@ namespace PatientEducationAssembler
 		{
             if (e.AddedItems.Count == 1)
 			{
-                ParseIssue i = (ParseIssue)e.AddedItems[0];
-                int scrollTo = currentReviewDocument.NavigateToIssue(i);
-
-                string ScrollToTopString = @"window.scrollTo(0," +  scrollTo + ");";
-                
-                SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(ScrollToTopString);
+                ShowIssue((ParseIssue)e.AddedItems[0]);
             }
 		}
+
+        private void ShowIssue(ParseIssue i)
+		{
+            if (currentReviewDocument != null && SingleItemBrowser.CoreWebView2 != null)
+            {
+                int scrollTo = currentReviewDocument.NavigateToIssue(i);
+
+                string ScrollToTopString = @"window.scrollTo(0," + scrollTo + ");";
+
+                SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(ScrollToTopString);
+            }
+        }
+
+		private void ReParseButton_Click(object sender, RoutedEventArgs e)
+		{
+            if (currentReviewDocument != null)
+			{
+                PrepareToParse();
+
+                currentReviewDocument.parseDocument();
+
+                SelectItem(currentReviewDocument);
+			}
+
+        }
 	}
 }

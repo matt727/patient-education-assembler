@@ -166,26 +166,28 @@
 			<TabItem x:Name="SingleItemTab" Header="Single Item">
 				<DockPanel>
 					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
+						<Button Content="Re-Parse" x:Name="ReParseButton" Click="ReParseButton_Click"/>
+						<Separator Width="20"/>
 						<Label Content="Nav Mode:"/>
-						<ComboBox Width="120">
+						<ComboBox x:Name="NavMode" Width="120">
 							<ComboBoxItem Content="Issues Only" IsSelected="True"/>
 							<ComboBoxItem Content="All"/>
 						</ComboBox>
 						<Separator Width="20"/>
-						<Button Content="|&lt;" Width="20"/>
-						<Button Content="&lt;" Width="20"/>
+						<Button Content="|&lt;" Width="20" Visibility="Collapsed"/>
+						<Button Content="&lt;" Width="20" Visibility="Collapsed"/>
 						<Label Content="Issue"/>
 						<Button x:Name="NextDocument" Content="&gt;" Width="20" Click="NextDocument_Click"/>
-						<Button Content="&gt;|" Width="20"/>
+						<Button Content="&gt;|" Width="20" Visibility="Collapsed"/>
 						<Separator Width="20"/>
-						<Label Content="Table Handling:"/>
-						<ComboBox Width="120">
+						<Label Content="Table Handling:" Visibility="Collapsed"/>
+						<ComboBox Width="120" Visibility="Collapsed">
 							<ComboBoxItem Content="Flatten"/>
 						</ComboBox>
-						<Separator Width="20"/>
+						<Separator Width="20" Visibility="Collapsed"/>
 						<Button x:Name="ExcludeDocument" Content="Exclude Item" Click="ExcludeDocument_Click"/>
 						<Separator Width="20"/>
-						<Button x:Name="MarkReviewed" Content="Mark As Reviewed" Click="MarkReviewed_Click"/>
+						<Button x:Name="MarkReviewed" Content="Mark As Reviewed &amp; Advance" Click="MarkReviewed_Click"/>
 					</StackPanel>
 					<DataGrid x:Name="IssueList"  Height="100" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" DockPanel.Dock="Bottom" SelectionChanged="IssueList_SelectionChanged">
 						<DataGrid.Columns>
@@ -196,6 +198,8 @@
 					<wv2:WebView2 Name="SingleItemBrowser" Source="https://www.microsoft.com"/>
 				</DockPanel>
 			</TabItem>
+			<Button Content="Button" Height="100" Width="74"/>
+			<Button Content="Button" Height="100" Width="74"/>
 
 		</TabControl>
 

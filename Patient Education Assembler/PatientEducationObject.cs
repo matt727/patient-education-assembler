@@ -430,6 +430,14 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterWriteLock();
 
+                if (thisDoc != null)
+				{
+                    // Close currently open document, without saving changes
+                    thisDoc.Close(Word.WdSaveOptions.wdDoNotSaveChanges);
+                    thisDoc = null;
+                    currentRange = null;
+				}
+
                 thisDoc = wordApp.Documents.Add();
                 
                 if (!(bool)Properties.Settings.Default.AlwaysShowWord)
@@ -518,6 +526,7 @@ namespace PatientEducationAssembler
 
             thisDoc.Close(Word.WdSaveOptions.wdPromptToSaveChanges);
             thisDoc = null;
+            currentRange = null;
         }
 
         internal void LoadSynonym(int synonymID, string synonym)
@@ -640,6 +649,7 @@ namespace PatientEducationAssembler
                 if (closeDocs)
                     thisDoc.Close();
                 thisDoc = null;
+                currentRange = null;
             }
             finally
             {

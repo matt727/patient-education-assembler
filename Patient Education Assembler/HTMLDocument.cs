@@ -258,6 +258,7 @@ namespace PatientEducationAssembler
                         case "tbody":
                         case "tr":
                         case "script":
+                        case "address":
                             // Accepted no implementation for now
                             break;
                         case "table":
