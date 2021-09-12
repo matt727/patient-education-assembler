@@ -312,8 +312,12 @@ namespace PatientEducationAssembler
                                 EndList();
                             break;
 
-                        case "br":
                         case "li":
+                            wantNewParagraph = true;
+                            inHighlight = false;
+                            break;
+
+                        case "br":
                         case "div":
                         case "p":
                             wantNewLine = true;

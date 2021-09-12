@@ -201,7 +201,6 @@ namespace PatientEducationAssembler
         public abstract void parseDocument();
         public bool parsedSince(DateTime lastChange)
 		{
-            FileInfo parsedDocument = null;
             FileInfo cachedSource = null;
 
             // check that this document has been parsed since the last cache source file write and the last content provider specs update
@@ -300,6 +299,7 @@ namespace PatientEducationAssembler
         protected Word.Range currentRange { get; private set; }
         protected bool wantNewLine { get; set; }
         protected bool wantNewParagraph { get; set; }
+        private bool insideList { get; set; }
 
         public bool DocumentParsed { get; set; }
 
@@ -452,6 +452,7 @@ namespace PatientEducationAssembler
 
             wantNewLine = false;
             wantNewParagraph = false;
+            insideList = false;
 
             boldRanges = new List<Tuple<int, int>>();
             highlightRanges = new List<Tuple<int, int>>();
@@ -737,7 +738,23 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterReadLock();
 
-                if (wantNewParagraph)
+                if (insideList)
+                {
+                    if (wantNewParagraph)
+					{
+                        currentRange.InsertAfter("\n");
+                        latestBlockStart = currentRange.End;
+                        wantNewParagraph = false;
+                        wantNewLine = false;
+                    }
+                    else if (wantNewLine)
+					{
+                        currentRange.InsertAfter(((char)11).ToString());
+                        latestBlockStart = currentRange.End;
+                        wantNewLine = false;
+                    }
+                }
+                else if (wantNewParagraph)
                 {
                     NewParagraph();
                 }
@@ -766,6 +783,8 @@ namespace PatientEducationAssembler
                 NewParagraph();
                 currentRange.ListFormat.ApplyBulletDefault();
                 currentRange.Start = currentRange.End;
+
+                insideList = true;
             }
             finally
             {
@@ -782,6 +801,8 @@ namespace PatientEducationAssembler
                 NewParagraph();
                 currentRange.ListFormat.ApplyNumberDefault();
                 currentRange.Start = currentRange.End;
+
+                insideList = true;
             }
             finally
             {
@@ -793,6 +814,7 @@ namespace PatientEducationAssembler
         {
             // End Bullet List
             wantNewParagraph = true;
+            insideList = false;
         }
 
         public int NavigateToIssue(ParseIssue i)
