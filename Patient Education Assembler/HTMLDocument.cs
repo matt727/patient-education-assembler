@@ -177,6 +177,7 @@ namespace PatientEducationAssembler
             int strongStart = 0;
             int emphasisStart = 0;
             int underlineStart = 0;
+            bool skipList = false;
 
             // Open tag logic
             switch (thisNode.NodeType)
@@ -206,10 +207,18 @@ namespace PatientEducationAssembler
                                 inHighlight = true;
                             break;
                         case "ul":
-                            StartBulletList();
+                            // Some pages have empty <ul> or <ol>
+                            if (thisNode.ChildNodes.Count == 0)
+                                skipList = true;
+                            else
+                                StartBulletList();
                             break;
                         case "ol":
-                            StartOrderedList();
+                            // Some pages have empty <ul> or <ol>
+                            if (thisNode.ChildNodes.Count == 0)
+                                skipList = true;
+                            else
+                                StartOrderedList();
                             break;
                         case "b":
                         case "strong":
@@ -297,7 +306,9 @@ namespace PatientEducationAssembler
                             break;
 
                         case "ul":
-                            EndList();
+                        case "ol":
+                            if (!skipList)
+                                EndList();
                             break;
 
                         case "br":

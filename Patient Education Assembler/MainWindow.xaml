@@ -187,14 +187,12 @@
 						<Separator Width="20"/>
 						<Button x:Name="MarkReviewed" Content="Mark As Reviewed" Click="MarkReviewed_Click"/>
 					</StackPanel>
-					<ListView x:Name="IssueList" Height="100" VerticalAlignment="Top" DockPanel.Dock="Bottom">
-						<ListView.View>
-							<GridView>
-								<GridViewColumn Header="Line" Width="40"/>
-								<GridViewColumn Header="Issue" Width="600"/>
-							</GridView>
-						</ListView.View>
-					</ListView>
+					<DataGrid x:Name="IssueList"  Height="100" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" DockPanel.Dock="Bottom" SelectionChanged="IssueList_SelectionChanged">
+						<DataGrid.Columns>
+							<DataGridTextColumn Binding="{Binding location}" ClipboardContentBinding="{x:Null}" Header="Line" IsReadOnly="True"/>
+							<DataGridTextColumn Binding="{Binding issue}" ClipboardContentBinding="{x:Null}" Header="Issue" IsReadOnly="True"/>
+						</DataGrid.Columns>
+					</DataGrid>
 					<wv2:WebView2 Name="SingleItemBrowser" Source="https://www.microsoft.com"/>
 				</DockPanel>
 			</TabItem>

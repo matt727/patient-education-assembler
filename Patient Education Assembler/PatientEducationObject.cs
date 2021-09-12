@@ -404,7 +404,7 @@ namespace PatientEducationAssembler
                 while (issueReader.Read())
                 {
                     String issueDesc = issueReader.GetString((int)EducationDatabase.ParseIssueColumns.Issue_Desc);
-                    int issueLoc = (int)issueReader.GetDouble((int)EducationDatabase.ParseIssueColumns.Issue_Loc);
+                    int issueLoc = issueReader.GetInt32((int)EducationDatabase.ParseIssueColumns.Issue_Loc);
 
                     ParseIssues.Add(new ParseIssue{ issue = issueDesc, location = issueLoc });
                 }
@@ -554,7 +554,26 @@ namespace PatientEducationAssembler
 		internal void SetReviewed()
 		{
             LastReview = DateTime.Now;
-		}
+
+            ParseIssues.Clear();
+
+            // Check if the document was edited
+            try
+            {
+                wordLock.EnterWriteLock();
+
+                if (!thisDoc.Saved)
+				{
+                    // Needs to be saved.  Save and mark as requiring manual intervention, for next time.
+                    thisDoc.Save();
+                    RequiredManualIntervention = true;
+				}
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+            }
+        }
 
 		protected List<Tuple<int, int>> highlightRanges { get; private set; }
         protected List<Tuple<int, int>> emphasisRanges { get; private set; }
@@ -764,6 +783,40 @@ namespace PatientEducationAssembler
         {
             // End Bullet List
             wantNewParagraph = true;
+        }
+
+        public int NavigateToIssue(ParseIssue i)
+		{
+            int ret = 0;
+
+            try
+            {
+                wordLock.EnterWriteLock();
+
+                Word.Window currentWindow = thisDoc.ActiveWindow;
+                if (currentWindow != null)
+                {
+                    if (currentRange == null)
+					{
+                        currentRange = thisDoc.Range(i.location, i.location + 10);
+                    }
+                    else
+					{
+                        currentRange.SetRange(i.location, i.location + 10);
+					}
+                    
+                    currentWindow.ScrollIntoView(currentRange);
+                    // currentWindow.Selection.SetRange(i.location, i.location + 10);
+
+                    ret = currentWindow.VerticalPercentScrolled;
+                }
+            }
+            finally
+            {
+                wordLock.ExitWriteLock();
+            }
+
+            return ret;
         }
 
         protected void AddWebImage(string relUrl, bool rightAlign = false)

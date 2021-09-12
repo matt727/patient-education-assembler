@@ -338,7 +338,7 @@ namespace PatientEducationAssembler
                 IssueList.Items.Clear();
                 foreach (ParseIssue i in currentReviewDocument.ParseIssues)
                 {
-                    IssueList.Items.Add(i.issue);
+                    IssueList.Items.Add(i);
                 }
             }
         }
@@ -426,5 +426,18 @@ namespace PatientEducationAssembler
                 currentReviewDocument.SetReviewed();
             }
         }
+
+		private void IssueList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+            if (e.AddedItems.Count == 1)
+			{
+                ParseIssue i = (ParseIssue)e.AddedItems[0];
+                int scrollTo = currentReviewDocument.NavigateToIssue(i);
+
+                string ScrollToTopString = @"window.scrollTo(0," +  scrollTo + ");";
+                
+                SingleItemBrowser.CoreWebView2.ExecuteScriptAsync(ScrollToTopString);
+            }
+		}
 	}
 }
