@@ -3,23 +3,25 @@
   <ContentProvider name="Department of Health and Human Services" url="https://www.betterhealth.vic.gov.au">
     <Bundle name="Better Health Channel"
             postfix = "Better Health Channel"
-            url="https://www.betterhealth.vic.gov.au/a-zofhealthcontent?ps=10000&amp;pn=1&amp;s=az&amp;f=201259CD997C4AF1A3C48062E8ABACDC_A"
-            subIndexXPath="//div[@class='search-facet-content ec-content']//a">
-        <!-- Qualify for C(onditions)AndTreatments documents only -->
-      <Document urlXPath="//ol[@class = 'listing cf']/li/a[contains(@href, 'onditions')]" indexTitleXPath="./h3">
-        <Image urlXPath="//img[@class = 'doh-logo']" align="right"/>
-        <Image urlXPath="//img[@class = 'bhc-logo']"/>
-        <Title nodeXPath="//h1[@id = 'phbody_1_ctl01_h1Title']"/>
-        <Synonym nodesXPath="//div[contains(@class, 'm-also-called')]//li"/>
-        <Content nodeXPath="//div[contains(@class, 'm-key-messages')]"/>
-        <Content required="true" nodeXPath="//div[@id = 'phbody_1_phcontentbody_2_pnl']"/>
-        <Node nodeXPath="//div[contains(@class, 'm-content-partner')]">
-          <Heading nodeXPath="//p[@class = 'partner-title intro']"/>
-          <Image nodeXPath="//div[@class = 'partner-logo']//img"/>
-        </Node>
-        <Content nodeXPath="//p[@class = 'partner-meta']"/>
-        <Content style="Subtle Emphasis" nodeXPath="//p[@class = 'partner-description']"/>
-      </Document>
+            indexType="JSON"
+			url="https://82fd82a8a6a68c599eb4e2cc2d6c49a5.elastic.sdp1.sdp.vic.gov.au/elasticsearch_index_drupal_node/_search?from=0&amp;size=5000&amp;filter_path=hits.hits%2Chits.total%2Caggregations&amp;_source=field_summary%2Cfield_node_primary_site%2Ctitle%2Ctitle_az%2Ctype%2Curl%2Cuuid%2Cimage_url%2Cimage_alt%2Ccreated%2Cchanged%2Cfield_date_last_reviewed">
+        <!-- Qualify for ConditionsAndTreatments documents only-->
+	  <Document 
+			docJSONPath="$..[?(@.type[0] == 'fact_sheet' &amp;&amp; @.url[0] =~ /.*conditionsandtreatments.*/i)]"
+            urlJSONPath="url[0]"
+            urlExtract="^\/site-5(.*)$"
+            indexTitleJSONPath="title[0]"
+            lastUpdatedJSONPath="$.field_date_last_reviewed">
+        <Image urlXPath="//img[@class = 'page-footer-bottom__logo']" align="right"/>
+        <Image urlXPath="//img[@class = 'header-large__logo-bar-image']"/>
+        <Title nodeXPath="//h1[@class = 'page-header__title']"/>
+        <Content nodeXPath="//ul[@class = 'content-intro__list']"/>
+        <Content required="true" nodeXPath="//div[@class = 'bhc-content__components']"/>
+		<Content style="Subtle Emphasis"
+				nodeXPath="//p[@class = 'content-partner__introduction']"/>
+		<Image nodeXPath="//div[@class = 'content-partner__meta']//img"/>
+        <Content nodeXPath="//div[@class = 'content-disclaimer']"/>
+	  </Document>
     </Bundle>
   </ContentProvider>
 </CustomPatientEducation>

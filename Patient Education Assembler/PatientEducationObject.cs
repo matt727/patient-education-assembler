@@ -15,6 +15,8 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace PatientEducationAssembler
 {
@@ -23,8 +25,36 @@ namespace PatientEducationAssembler
         public string issue { get; set; }
         public int location { get; set; }
 	}
+
     public abstract class PatientEducationObject : INotifyPropertyChanged
     {
+        // Hash an input string and return the hash as
+        // a 32 character hexadecimal string.
+        static protected string getMd5Hash(string input)
+        {
+            // Create a new instance of the MD5CryptoServiceProvider object.
+            using (MD5CryptoServiceProvider md5Hasher = new MD5CryptoServiceProvider())
+            {
+
+                // Convert the input string to a byte array and compute the hash.
+                byte[] data = md5Hasher.ComputeHash(Encoding.Default.GetBytes(input));
+
+                // Create a new Stringbuilder to collect the bytes
+                // and create a string.
+                StringBuilder sBuilder = new StringBuilder();
+
+                // Loop through each byte of the hashed data 
+                // and format each one as a hexadecimal string.
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2"));
+                }
+
+                // Return the hexadecimal string.
+                return sBuilder.ToString();
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public PatientEducationProvider ParentProvider { get; private set; }
@@ -88,6 +118,10 @@ namespace PatientEducationAssembler
         {
             return File.GetLastWriteTime(cacheFileName());
         }
+
+        public DateTime dbCacheDate { get; private set; }
+
+        public DateTime ContentUpdateDate { get; protected set; }
 
         internal static void cleanupWord()
         {
@@ -180,7 +214,8 @@ namespace PatientEducationAssembler
             ParseError,
             LoadedSucessfully,
             DocumentIgnored,
-            RemovedByContentProvider
+            RemovedByContentProvider,
+            FetchError
         }
         private LoadStatusEnum currentLoadStatus;
         public LoadStatusEnum LoadStatus
@@ -299,7 +334,8 @@ namespace PatientEducationAssembler
         protected Word.Range currentRange { get; private set; }
         protected bool wantNewLine { get; set; }
         protected bool wantNewParagraph { get; set; }
-        private bool insideList { get; set; }
+        protected string newParagraphStyle { get; set; }
+        protected bool insideList { get; private set; }
 
         public bool DocumentParsed { get; set; }
 
@@ -326,6 +362,9 @@ namespace PatientEducationAssembler
 
             ThisGUID = Guid.NewGuid();
             FileName = ThisGUID + ".rtf";
+
+            dbCacheDate = System.DateTime.MinValue;
+            ContentUpdateDate = System.DateTime.MinValue;
 
             Synonyms = new Dictionary<int, string>();
             createWordApp();
@@ -354,6 +393,9 @@ namespace PatientEducationAssembler
                 thisGuid = Guid.NewGuid();
             else
                 ThisGUID = thisGuid;
+
+            dbCacheDate = System.DateTime.MinValue;
+            ContentUpdateDate = System.DateTime.MinValue;
 
             createWordApp();
 
@@ -389,6 +431,26 @@ namespace PatientEducationAssembler
 			}
 
             RequiredManualIntervention = reader.GetBoolean((int)EducationDatabase.MetadataColumns.RequiredManualIntervention);
+
+            if (!reader.IsDBNull((int)EducationDatabase.MetadataColumns.CacheDate))
+            {
+                dbCacheDate =  reader.GetDateTime((int)EducationDatabase.MetadataColumns.CacheDate);
+            }
+			else
+			{
+                dbCacheDate = System.DateTime.MinValue;
+
+            }
+
+            if (!reader.IsDBNull((int)EducationDatabase.MetadataColumns.ContentUpdateDate))
+            {
+                ContentUpdateDate = reader.GetDateTime((int)EducationDatabase.MetadataColumns.ContentUpdateDate);
+            }
+            else
+			{
+                ContentUpdateDate = System.DateTime.MinValue;
+
+            }
 
             Synonyms = new Dictionary<int, string>();
 
@@ -458,6 +520,8 @@ namespace PatientEducationAssembler
             highlightRanges = new List<Tuple<int, int>>();
             emphasisRanges = new List<Tuple<int, int>>();
             underlineRanges = new List<Tuple<int, int>>();
+            subscriptRanges = new List<Tuple<int, int>>();
+            superscriptRanges = new List<Tuple<int, int>>();
         }
 
         protected void OpenDocument(string fileName)
@@ -560,8 +624,10 @@ namespace PatientEducationAssembler
         protected static int latestBlockStart { get; set; }
 
         protected List<Tuple<int, int>> boldRanges { get; private set; }
+        protected List<Tuple<int, int>> subscriptRanges { get; private set; }
+        protected List<Tuple<int, int>> superscriptRanges { get; private set; }
 
-		internal void SetReviewed()
+        internal void SetReviewed()
 		{
             LastReview = DateTime.Now;
 
@@ -607,7 +673,7 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterUpgradeableReadLock();
 
-                if (boldRanges.Count > 1)
+                if (boldRanges.Count > 0)
                     foreach (Tuple<int, int> boldRange in boldRanges)
                     {
                         currentRange.SetRange(boldRange.Item1, boldRange.Item2);
@@ -616,7 +682,7 @@ namespace PatientEducationAssembler
                     }
                 boldRanges = null;
 
-                if (highlightRanges.Count > 1)
+                if (highlightRanges.Count > 0)
                     foreach (Tuple<int, int> highlightRange in highlightRanges)
                     {
                         currentRange.SetRange(highlightRange.Item1, highlightRange.Item2);
@@ -624,7 +690,7 @@ namespace PatientEducationAssembler
                     }
                 highlightRanges = null;
 
-                if (emphasisRanges.Count > 1)
+                if (emphasisRanges.Count > 0)
                     foreach (Tuple<int, int> emphasisRange in emphasisRanges)
                     {
                         currentRange.SetRange(emphasisRange.Item1, emphasisRange.Item2);
@@ -632,13 +698,29 @@ namespace PatientEducationAssembler
                     }
                 emphasisRanges = null;
 
-                if (underlineRanges.Count > 1)
+                if (underlineRanges.Count > 0)
                     foreach (Tuple<int, int> underlineRange in underlineRanges)
                     {
                         currentRange.SetRange(underlineRange.Item1, underlineRange.Item2);
                         currentRange.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
                     }
                 underlineRanges = null;
+
+                if (subscriptRanges.Count > 0)
+                    foreach (Tuple<int, int> subscriptRange in subscriptRanges)
+                    {
+                        currentRange.SetRange(subscriptRange.Item1, subscriptRange.Item2);
+                        currentRange.Font.Subscript = 1;
+                    }
+                subscriptRanges = null;
+
+                if (superscriptRanges.Count > 0)
+                    foreach (Tuple<int, int> superscriptRange in superscriptRanges)
+                    {
+                        currentRange.SetRange(superscriptRange.Item1, superscriptRange.Item2);
+                        currentRange.Font.Superscript = 1;
+                    }
+                subscriptRanges = null;
 
                 currentRange = thisDoc.Range();
                 currentRange.Font.Name = fontFamily;
@@ -703,7 +785,7 @@ namespace PatientEducationAssembler
                 currentRange = thisDoc.Paragraphs.Last.Range;
                 latestBlockStart = currentRange.Start;
 
-                SetStyle(style.Length > 0 ? style : "Normal");
+                SetStyle(style.Length > 0 ? style : newParagraphStyle.Length > 0 ? newParagraphStyle : "Normal");
             }
             finally
             {
@@ -712,6 +794,7 @@ namespace PatientEducationAssembler
             
             wantNewLine = false;
             wantNewParagraph = false;
+            newParagraphStyle = "";
         }
 
         protected void TrimAndAddText(string text)
@@ -973,7 +1056,8 @@ namespace PatientEducationAssembler
                         "[FileName] = @fn, [Doc_Lang_ID] = @doclang, [Document_Name] = @title, [Language_ID] = @lang, " +
                         "[GenderID] = @gender, [AgeID] = @age, [URL] = @url, [Enabled] = @enabled, " +
                         "[ContentProvider] = @provider, [Bundle] = @bundle, [GUID] = @thisguid, [LastReview] = @lastrev, " +
-                        "[RequiredManualIntervention] = @manualIntervention WHERE [Doc_ID] = @doc";
+                        "[RequiredManualIntervention] = @manualIntervention, [CacheDate] = @cacheDate, " +
+                        "[ContentUpdateDate] = @contentUpdateDate WHERE [Doc_ID] = @doc";
                 }
                 else
                 {
@@ -983,9 +1067,10 @@ namespace PatientEducationAssembler
                     metaData.CommandText = "INSERT INTO [DocumentAssemblerMetadata] (" +
                         "[FileName], [Doc_Lang_Id], [Document_Name], [Language_ID], " +
                         "[GenderID], [AgeID], [URL], [Enabled], [ContentProvider], [Bundle], [GUID], [LastReview], " +
-                        "[RequiredManualIntervention], [Doc_ID]) " +
+                        "[RequiredManualIntervention], [CacheDate], [ContentUpdateDate], [Doc_ID]) " +
                         "VALUES (@fn, @doclang, @title, @lang, " +
-                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @lastrev, @manualIntervention, @doc" +
+                        "@gender, @age, @url, @enabled, @provider, @bundle, @thisguid, @lastrev, @manualIntervention," +
+                        "@cacheDate, @contentUpdateDate, @doc" +
                         ")";
                 }
 
@@ -1011,6 +1096,24 @@ namespace PatientEducationAssembler
                 }
 
                 metaData.Parameters.Add("@manualIntervention", OleDbType.Boolean).Value = RequiredManualIntervention;
+
+                if (isCached())
+                {
+                    metaData.Parameters.Add("@cacheDate", OleDbType.DBDate).Value = dbCacheDate;
+                }
+                else
+                {
+                    metaData.Parameters.Add("@cacheDate", OleDbType.DBDate).Value = DBNull.Value;
+                }
+
+                if (ContentUpdateDate == System.DateTime.MinValue)
+                {
+                    metaData.Parameters.Add("@contentUpdateDate", OleDbType.DBDate).Value = ContentUpdateDate;
+                }
+                else
+                {
+                    metaData.Parameters.Add("@contentUpdateDate", OleDbType.DBDate).Value = DBNull.Value;
+                }
 
                 // Must be last
                 metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;

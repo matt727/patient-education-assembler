@@ -103,8 +103,8 @@ namespace PatientEducationAssembler
                         HtmlNode contentBaseNode = nodeFromAttribute(htmlNode, childNode, "nodeXPath");
                         if (contentBaseNode != null)
                         {
-                            // wantNewParagraph handling??
-                            NewParagraph(stringAttribute(childNode, "style"));
+                            wantNewParagraph = true;
+                            newParagraphStyle = stringAttribute(childNode, "style");
 
                             WalkNodes(contentBaseNode, boolAttribute(childNode, "ignoreDivs"));
                         }
@@ -112,7 +112,7 @@ namespace PatientEducationAssembler
                         {
                             if (boolAttribute(childNode, "required"))
                             {
-                                Console.WriteLine("No content node!");
+                                ParseIssues.Add(item: new ParseIssue { issue = "Could not find match content node", location = 0 });
                                 LoadStatus = LoadStatusEnum.ParseError;
                                 return;
                             }
@@ -177,6 +177,8 @@ namespace PatientEducationAssembler
             int strongStart = 0;
             int emphasisStart = 0;
             int underlineStart = 0;
+            int superscriptStart = 0;
+            int subscriptStart = 0;
             bool skipList = false;
 
             // Open tag logic
@@ -208,14 +210,14 @@ namespace PatientEducationAssembler
                             break;
                         case "ul":
                             // Some pages have empty <ul> or <ol>
-                            if (thisNode.ChildNodes.Count == 0)
+                            if (thisNode.ChildNodes.Count == 0 || insideList)
                                 skipList = true;
                             else
                                 StartBulletList();
                             break;
                         case "ol":
                             // Some pages have empty <ul> or <ol>
-                            if (thisNode.ChildNodes.Count == 0)
+                            if (thisNode.ChildNodes.Count == 0 || insideList)
                                 skipList = true;
                             else
                                 StartOrderedList();
@@ -253,12 +255,22 @@ namespace PatientEducationAssembler
                         case "td":
                             wantNewParagraph = true;
                             break;
+                        case "sup":
+                            superscriptStart = currentRange.End;
+                            latestBlockStart = -1;
+                            break;
+                        case "sub":
+                            subscriptStart = currentRange.End;
+                            latestBlockStart = -1;
+                            break;
                         case "span":
                         case "a":
                         case "tbody":
                         case "tr":
                         case "script":
                         case "address":
+                        case "del":
+                        case "svg":
                             // Accepted no implementation for now
                             break;
                         case "table":
@@ -359,6 +371,26 @@ namespace PatientEducationAssembler
                             if (inHighlight)
                                 highlightRanges.Add(new Tuple<int, int>(underlineStart, currentRange.End));
 
+                            break;
+
+                        case "sub":
+                            if (latestBlockStart != -1 && subscriptStart < latestBlockStart && latestBlockStart < currentRange.Start)
+                                subscriptStart = latestBlockStart;
+
+                            subscriptRanges.Add(new Tuple<int, int>(subscriptStart, currentRange.End));
+
+                            if (inHighlight)
+                                highlightRanges.Add(new Tuple<int, int>(subscriptStart, currentRange.End));
+                            break;
+
+                        case "sup":
+                            if (latestBlockStart != -1 && superscriptStart < latestBlockStart && latestBlockStart < currentRange.Start)
+                                superscriptStart = latestBlockStart;
+
+                            subscriptRanges.Add(new Tuple<int, int>(superscriptStart, currentRange.End));
+
+                            if (inHighlight)
+                                highlightRanges.Add(new Tuple<int, int>(superscriptStart, currentRange.End));
                             break;
 
                         default:

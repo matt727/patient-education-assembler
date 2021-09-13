@@ -93,7 +93,9 @@ namespace PatientEducationAssembler
             Bundle,
             GUID,
             LastReview,
-            RequiredManualIntervention
+            RequiredManualIntervention,
+            CacheDate,
+            ContentUpdateDate
         };
 
         public enum ParseIssueColumns
@@ -294,9 +296,15 @@ namespace PatientEducationAssembler
 
             foreach (HTMLDocument doc in delayStartTasks)
             {
+                bool docCached = doc.isCached();
+
                 doc.ParseTask.Start();
-                // 10 sec wait before the next task is scheduled - avoid hitting the host too frequently
-                await Task.Delay(10000);
+
+                if (!docCached)
+                {
+                    // 2 sec wait before the next task is scheduled - avoid hitting the host too frequently
+                    await Task.Delay(2000);
+                }
             }
         }
 

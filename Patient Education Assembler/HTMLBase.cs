@@ -73,6 +73,7 @@ namespace PatientEducationAssembler
                                 default:
                                     System.Windows.MessageBox.Show("Unhandled HTTP response exception: " + r.ToString(),
                                     "Patient Education Assembler", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                                    LoadStatus = LoadStatusEnum.FetchError;
                                     break;
                             }
                         }
@@ -81,6 +82,7 @@ namespace PatientEducationAssembler
                             System.Windows.MessageBox.Show("HTTP error: " + e.Message,
                                     "Patient Education Assembler", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                             
+                            LoadStatus = LoadStatusEnum.FetchError;
                         }
                     }
                 }

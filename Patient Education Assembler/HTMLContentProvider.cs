@@ -12,6 +12,7 @@ using System.Windows;
 using System.Data.OleDb;
 using System.Xml.XPath;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 namespace PatientEducationAssembler
 {
@@ -91,21 +92,39 @@ namespace PatientEducationAssembler
         // Handles single index pages which explode to more index pages (xpath attribute)
         private void ParseBundle(XElement node)
         {
-            // Auto download and retrieves the index
-            HTMLBase indexDocument = new HTMLIndex(this, new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
-            indexDocument.retrieveAndParse();
-            
-            if (node.Attribute("subIndexXPath") != null)
-            {
-                foreach (HtmlNode indexLink in indexDocument.doc.DocumentNode.SelectNodes(node.Attribute("subIndexXPath").Value.ToString()))
+            XAttribute indexType = node.Attribute("indexType");
+
+            if (indexType != null && indexType.Value == "JSON")
+			{
+                // JSON based index
+                JSONIndex indexDocument = new JSONIndex(this, new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
+                indexDocument.retrieveAndParse();
+
+                //MessageBox.Show(indexDocument.json().ToString().Substring(0, 50));
+
+                ParseIndex(node, indexDocument.json(), node.Attribute("postfix").Value);
+            }
+            else
+			{
+                // HTML based index
+
+                // Auto download and retrieves the index
+                HTMLBase indexDocument = new HTMLIndex(this, new Uri(bundleUrl, node.Attribute("url").Value.ToString()));
+                indexDocument.retrieveAndParse();
+
+                if (node.Attribute("subIndexXPath") != null)
                 {
-                    HTMLBase subIndex = new HTMLIndex(this, new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
-                    subIndex.retrieveAndParse();
-                    ParseIndex(node, subIndex.doc, node.Attribute("postfix").Value);
+                    foreach (HtmlNode indexLink in indexDocument.doc.DocumentNode.SelectNodes(node.Attribute("subIndexXPath").Value.ToString()))
+                    {
+                        HTMLBase subIndex = new HTMLIndex(this, new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
+                        subIndex.retrieveAndParse();
+                        ParseIndex(node, subIndex.doc, node.Attribute("postfix").Value);
+                    }
                 }
-            } else
-            {
-                ParseIndex(node, indexDocument.doc, node.Attribute("postfix").Value);
+                else
+                {
+                    ParseIndex(node, indexDocument.doc, node.Attribute("postfix").Value);
+                }
             }
         }
 
@@ -125,6 +144,48 @@ namespace PatientEducationAssembler
                     MainWindow.thisWindow.IndexProgress.Maximum += docMatches.Count;
                     foreach (HtmlNode document in docMatches)
                         LoadDocument(specDoc, document, bundlePostfix);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Iterates available links on the loaded index page
+        /// </summary>
+        /// <param name="node">The content loading configuration, at the level of node "Document"</param>
+        /// <param name="doc">The HTML node representing the index HTML document</param>
+        private void ParseIndex(XElement node, JObject index, string bundlePostfix)
+        {
+            foreach (XElement specDoc in node.Elements("Document"))
+            {
+                XAttribute docPath = specDoc.Attribute("docJSONPath");
+
+                if (docPath != null)
+                {
+                    // Essentially hard coded, will need review if any further JSON providers come on board
+                    String urlPath = specDoc.Attribute("urlJSONPath").Value;
+                    Regex urlExtractRegex = new Regex(specDoc.Attribute("urlExtract").Value);
+                    String titlePath = specDoc.Attribute("indexTitleJSONPath").Value;
+
+                    //MessageBox.Show(docPath.Value + urlPath + urlExtractRegex.ToString() + titlePath);
+
+                    foreach (JToken doc in index.SelectTokens(docPath.Value))
+                    {
+                        //MessageBox.Show("parsing source " + doc.ToString());
+
+                        //MessageBox.Show("parsing source " + doc.SelectToken(urlPath).ToString());
+
+                        String preUrl = doc.SelectToken(urlPath).Value<String>();
+                        // Extract url via regex
+                        Match m = urlExtractRegex.Match(preUrl);
+                        if (m.Success)
+                            preUrl = m.Groups[1].Value;
+
+                        Uri link = new Uri(contentProviderUrl, preUrl);
+
+                        String title = doc.SelectToken(titlePath).Value<String>();
+
+                        LoadDocumentInternal(specDoc, bundlePostfix, link, title);
+                    }
                 }
             }
         }
@@ -158,6 +219,14 @@ namespace PatientEducationAssembler
                 }
             }
 
+            HTMLDocument thisPage = LoadDocumentInternal(node, bundlePostfix, link, title);
+
+            if (synonym.Length > 0)
+                thisPage.AddSynonym(synonym);
+        }
+
+        private HTMLDocument LoadDocumentInternal(XElement node, string bundlePostfix, Uri link, string title)
+        {
             // Postfix the bundle tag to the document title
             title += " - " + bundlePostfix;
 
@@ -203,10 +272,9 @@ namespace PatientEducationAssembler
                 }
             }
 
-            if (synonym.Length > 0)
-                thisPage.AddSynonym(synonym);
-
             MainWindow.thisWindow.IndexProgress.Value++;
+
+            return thisPage;
         }
 
         static private void requestRetrieveAndParse(HTMLDocument thisPage)

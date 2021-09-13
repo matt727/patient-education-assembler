@@ -198,9 +198,6 @@
 					<wv2:WebView2 Name="SingleItemBrowser" Source="https://www.microsoft.com"/>
 				</DockPanel>
 			</TabItem>
-			<Button Content="Button" Height="100" Width="74"/>
-			<Button Content="Button" Height="100" Width="74"/>
-
 		</TabControl>
 
 
