@@ -17,10 +17,10 @@
         <Title nodeXPath="//h1[@class = 'page-header__title']"/>
         <Content nodeXPath="//ul[@class = 'content-intro__list']"/>
         <Content required="true" nodeXPath="//div[@class = 'bhc-content__components']"/>
-		<Content style="Subtle Emphasis"
+		<Content stylea="Intense Emphasis"
 				nodeXPath="//p[@class = 'content-partner__introduction']"/>
-		<Image nodeXPath="//div[@class = 'content-partner__meta']//img"/>
-        <Content nodeXPath="//div[@class = 'content-disclaimer']"/>
+		<Content nodeXPath="//div[@class = 'content-partner__meta']"/>
+		<Content nodeXPath="//div[@class = 'content-disclaimer']"/>
 	  </Document>
     </Bundle>
   </ContentProvider>
