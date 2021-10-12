@@ -168,35 +168,49 @@ namespace PatientEducationAssembler
 
         public string Status {
             get {
+                string ret;
+
+                if (isCached())
+                {
+                    if (!File.Exists(cacheFileName()))
+                        ret = "Missing / ";
+                    else
+                        ret = "Parsed / ";
+                }
+                else
+                {
+                    ret = "New / ";
+                }
+                    
+
                 switch (LoadStatus)
                 {
-
                     case LoadStatusEnum.DatabaseEntry:
-                        return "Database Entry";
+                        return ret + "Database Entry";
                     case LoadStatusEnum.DatabaseAndIndexMatched:
-                        return "DB + Index Entry";
+                        return ret + "DB + Index Entry";
                     case LoadStatusEnum.Waiting:
-                        return "Waiting to download";
+                        return ret + "Waiting to download";
                     case LoadStatusEnum.Retrieving:
-                        return "Downloading";
+                        return ret + "Downloading";
                     case LoadStatusEnum.Downloaded:
-                        return "Downloaded";
+                        return ret + "Downloaded";
                     case LoadStatusEnum.AccessError:
-                        return "Access Error";
+                        return ret + "Access Error";
                     case LoadStatusEnum.Parsing:
-                        return "Parsing";
+                        return ret + "Parsing";
                     case LoadStatusEnum.ParseError:
-                        return "Parse Error";
+                        return ret + "Parse Error";
                     case LoadStatusEnum.LoadedSucessfully:
-                        return "Complete";
+                        return ret + "Complete";
                     case LoadStatusEnum.NewFromWebIndex:
-                        return "New Document";
+                        return ret + "New Document";
                     case LoadStatusEnum.DocumentIgnored:
-                        return "Document Ignored";
+                        return ret + "Document Ignored";
                     case LoadStatusEnum.RemovedByContentProvider:
-                        return "Removed by Content Provider";
+                        return ret + "Removed by Content Provider";
                     default:
-                        return "Undefined";
+                        return ret + "Undefined";
                 }
             }
         }
@@ -375,6 +389,9 @@ namespace PatientEducationAssembler
         // New document constructor for index URLs
         public PatientEducationObject(PatientEducationProvider provider, Uri url, Guid thisGuid)
         {
+            // Needs to be first, because Load Status can depend on it...
+            URL = url;
+
             ParentProvider = provider;
             FromDatabase = true;
             DocumentParsed = false;
@@ -386,8 +403,6 @@ namespace PatientEducationAssembler
             CategoryID = 1;
             DocLangID = 1; // English (default) TODO support other languages
             DocID = -1;
-
-            URL = url;
 
             if (thisGuid == Guid.Empty)
                 thisGuid = Guid.NewGuid();
@@ -553,26 +568,31 @@ namespace PatientEducationAssembler
                 if (thisDoc == null)
                     OpenDocument(rtfFileName());
 
-                Word.Window currentWindow = thisDoc.ActiveWindow;
-                if (currentWindow != null)
+                if (thisDoc != null)
                 {
-                    // Restore last Word window location and position to this window
-                    if (currentWordPosition.Height > 0)
+                    Word.Window currentWindow = thisDoc.ActiveWindow;
+                    if (currentWindow != null)
                     {
-                        currentWindow.Top = (int)currentWordPosition.Top;
-                        currentWindow.Height = (int)currentWordPosition.Height;
-                        currentWindow.Left = (int)currentWordPosition.Left;
-                        currentWindow.Width = (int)currentWordPosition.Width;
+                        // Restore last Word window location and position to this window
+                        if (currentWordPosition.Height > 0)
+                        {
+                            currentWindow.Top = (int)currentWordPosition.Top;
+                            currentWindow.Height = (int)currentWordPosition.Height;
+                            currentWindow.Left = (int)currentWordPosition.Left;
+                            currentWindow.Width = (int)currentWordPosition.Width;
+                        }
+
+                        currentWindow.Visible = true;
+
+                        // Set Web View to remove page (printed) style viewing
+                        Word.View currentView = currentWindow.View;
+                        if (currentView != null)
+                        {
+                            currentView.Type = Word.WdViewType.wdWebView;
+                        }
                     }
-
-                    currentWindow.Visible = true;
-
-                    // Set Web View to remove page (printed) style viewing
-                    Word.View currentView = currentWindow.View;
-                    if (currentView != null)
-					{
-                        currentView.Type = Word.WdViewType.wdWebView;
-					}
+                } else {
+                    MessageBox.Show("Unable to open file " + rtfFileName());
                 }
             }
             finally
@@ -606,11 +626,14 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterWriteLock();
 
-                Word.Window currentWindow = thisDoc.ActiveWindow;
-                if (currentWindow != null)
+                if (thisDoc != null)
                 {
-                    
-                    currentWindow.VerticalPercentScrolled = scrollPos;
+                    Word.Window currentWindow = thisDoc.ActiveWindow;
+                    if (currentWindow != null)
+                    {
+
+                        currentWindow.VerticalPercentScrolled = scrollPos;
+                    }
                 }
             }
             finally
@@ -638,7 +661,7 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterWriteLock();
 
-                if (!thisDoc.Saved)
+                if (thisDoc != null && !thisDoc.Saved)
 				{
                     // Needs to be saved.  Save and mark as requiring manual intervention, for next time.
                     thisDoc.Save();
@@ -664,6 +687,17 @@ namespace PatientEducationAssembler
                 retval += String.Format("{0:X2} {1:X2} ", bytes[1], bytes[0]);
             }
             return retval;
+        }
+
+        public int getCurrentCursorPosition()
+        {
+            wordLock.EnterReadLock();
+
+            int ret = thisDoc.Paragraphs.Last.Range.End - 1;
+
+            wordLock.ExitReadLock();
+
+            return ret;
         }
 
         public virtual void FinishDocument(string fontFamily = "Calibri")
@@ -826,6 +860,7 @@ namespace PatientEducationAssembler
                     if (wantNewParagraph)
 					{
                         currentRange.InsertAfter("\n");
+                        currentRange.Start = currentRange.End;
                         latestBlockStart = currentRange.End;
                         wantNewParagraph = false;
                         wantNewLine = false;
@@ -833,6 +868,7 @@ namespace PatientEducationAssembler
                     else if (wantNewLine)
 					{
                         currentRange.InsertAfter(((char)11).ToString());
+                        currentRange.Start = currentRange.End;
                         latestBlockStart = currentRange.End;
                         wantNewLine = false;
                     }
@@ -844,6 +880,7 @@ namespace PatientEducationAssembler
                 else if (wantNewLine)
                 {
                     currentRange.InsertAfter("\n");
+                    currentRange.Start = currentRange.End;
                     latestBlockStart = currentRange.End;
                     wantNewLine = false;
                 }
@@ -908,22 +945,25 @@ namespace PatientEducationAssembler
             {
                 wordLock.EnterWriteLock();
 
-                Word.Window currentWindow = thisDoc.ActiveWindow;
-                if (currentWindow != null)
+                if (thisDoc != null)
                 {
-                    if (currentRange == null)
-					{
-                        currentRange = thisDoc.Range(i.location, i.location + 10);
-                    }
-                    else
-					{
-                        currentRange.SetRange(i.location, i.location + 10);
-					}
-                    
-                    currentWindow.ScrollIntoView(currentRange);
-                    // currentWindow.Selection.SetRange(i.location, i.location + 10);
+                    Word.Window currentWindow = thisDoc.ActiveWindow;
+                    if (currentWindow != null)
+                    {
+                        if (currentRange == null)
+                        {
+                            currentRange = thisDoc.Range(i.location, i.location + 10);
+                        }
+                        else
+                        {
+                            currentRange.SetRange(i.location, i.location + 10);
+                        }
 
-                    ret = currentWindow.VerticalPercentScrolled;
+                        currentWindow.ScrollIntoView(currentRange);
+                        // currentWindow.Selection.SetRange(i.location, i.location + 10);
+
+                        ret = currentWindow.VerticalPercentScrolled;
+                    }
                 }
             }
             finally
@@ -994,7 +1034,7 @@ namespace PatientEducationAssembler
 
         protected void InsertQRCode(Uri url)
         {
-            string qrPath = cacheFileName() + ".qr.png";
+            string qrPath = cachePath() + getMd5Hash(url.ToString()) + ".qr.png";
             if (!File.Exists(qrPath))
             {
                 // Generate matching QR code for this file, as we have not yet done so already
@@ -1130,7 +1170,7 @@ namespace PatientEducationAssembler
                         ")";
                     insertIssue.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
                     insertIssue.Parameters.Add("@issueloc", OleDbType.Double).Value = (double)issue.location;
-                    insertIssue.Parameters.Add("@issuedesc", OleDbType.VarChar, 255).Value = issue.issue;
+                    insertIssue.Parameters.Add("@issuedesc", OleDbType.VarChar, 255).Value = issue.issue.Substring(0, 254);
 
                     insertIssue.ExecuteNonQuery();
                 }

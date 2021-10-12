@@ -103,6 +103,9 @@ namespace PatientEducationAssembler
             // Don't overwrite an error status
             if (LoadStatus == LoadStatusEnum.Parsing)
                 LoadStatus = LoadStatusEnum.LoadedSucessfully;
+
+            // Clear prior parse issues
+            ParseIssues.Clear();
         }
 
         public override void FinishDocument(string fontFamily = "Calibri")

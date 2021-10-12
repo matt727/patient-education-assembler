@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using System.Data.OleDb;
 using System.Threading;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace PatientEducationAssembler
 {
@@ -180,6 +181,7 @@ namespace PatientEducationAssembler
             int superscriptStart = 0;
             int subscriptStart = 0;
             bool skipList = false;
+            bool skipChildren = false;
 
             // Open tag logic
             switch (thisNode.NodeType)
@@ -209,31 +211,32 @@ namespace PatientEducationAssembler
                                 inHighlight = true;
                             break;
                         case "ul":
-                            // Some pages have empty <ul> or <ol>
-                            if (thisNode.ChildNodes.Count == 0 || insideList)
+                            // Some pages have empty <ul> or <ol>... only start a list if there is a <li> item immediately below
+                            if (thisNode.SelectNodes("li") == null || insideList)
                                 skipList = true;
                             else
                                 StartBulletList();
                             break;
                         case "ol":
-                            // Some pages have empty <ul> or <ol>
-                            if (thisNode.ChildNodes.Count == 0 || insideList)
+                            // Some pages have empty <ul> or <ol>... only start a list if there is a <li> item immediately below
+                            if (thisNode.SelectNodes("li") == null || insideList)
                                 skipList = true;
                             else
                                 StartOrderedList();
                             break;
                         case "b":
                         case "strong":
-                            strongStart = currentRange.End;
+                            strongStart = getCurrentCursorPosition();
                             latestBlockStart = -1;
+                            //Console.WriteLine("Bold start: {0}", getCurrentCursorPosition());
                             break;
                         case "i":
                         case "em":
-                            emphasisStart = currentRange.End;
+                            emphasisStart = getCurrentCursorPosition();
                             latestBlockStart = -1;
                             break;
                         case "u":
-                            underlineStart = currentRange.End;
+                            underlineStart = getCurrentCursorPosition();
                             latestBlockStart = -1;
                             break;
                         case "h":
@@ -256,12 +259,15 @@ namespace PatientEducationAssembler
                             wantNewParagraph = true;
                             break;
                         case "sup":
-                            superscriptStart = currentRange.End;
+                            superscriptStart = getCurrentCursorPosition();
                             latestBlockStart = -1;
                             break;
                         case "sub":
-                            subscriptStart = currentRange.End;
+                            subscriptStart = getCurrentCursorPosition();
                             latestBlockStart = -1;
+                            break;
+                        case "del":
+                            skipChildren = true;
                             break;
                         case "span":
                         case "a":
@@ -269,15 +275,62 @@ namespace PatientEducationAssembler
                         case "tr":
                         case "script":
                         case "address":
-                        case "del":
                         case "svg":
+                        case "path":
+                        case "article":
+                        case "figure":
+                        case "figcaption":
                             // Accepted no implementation for now
                             break;
+                        case "iframe":
+                            // YouTube embed code
+                            Regex youTubeEmbedRx = new Regex(@"youtube\.com\/embed\/(?<ytCode>\w+)\?",
+                                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+                            // Vimeo embed code
+                            Regex vimeoEmbedRx = new Regex(@"player.vimeo\.com\/video\/(?<vimeoCode>\w+)\?",
+                                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+                            // Try to detect embedded youtube video
+                            string sourceURL = thisNode.GetAttributeValue("src", "");
+
+                            // Find matches.
+                            MatchCollection ytMatches = youTubeEmbedRx.Matches(sourceURL);
+                            MatchCollection vimeoMatches = vimeoEmbedRx.Matches(sourceURL);
+
+                            if (ytMatches.Count > 0)
+                            {
+                                // Report on each match.
+                                foreach (Match match in ytMatches)
+                                {
+                                    GroupCollection groups = match.Groups;
+                                    NewParagraph("Heading 3");
+                                    AddText("View YouTube Video");
+                                    NewParagraph();
+                                    InsertQRCode(new Uri("https://www.youtube.com/watch?v=" + groups["ytCode"].Value));
+                                }
+                            }
+                            else if (vimeoMatches.Count > 0)
+                            {
+                                // Report on each match.
+                                foreach (Match match in vimeoMatches)
+                                {
+                                    // OK it's a Vimeo URL...
+                                    GroupCollection groups = match.Groups;
+                                    NewParagraph("Heading 3");
+                                    AddText("View Vimeo Video");
+                                    NewParagraph();
+                                    InsertQRCode(new Uri("https://vimeo.com/" + groups["vimeoCode"].Value));
+                                }
+                            } else {
+                                ParseIssues.Add(item: new ParseIssue { issue = "Unhandled IFrame URL:" + sourceURL, location = getCurrentCursorPosition() });
+                            }
+                            break;
                         case "table":
-                            ParseIssues.Add(item: new ParseIssue { issue = "Table Encountered, review needed", location = currentRange.End });
+                            ParseIssues.Add(item: new ParseIssue { issue = "Table Encountered, review needed", location = getCurrentCursorPosition() });
                             break;
                         default:
-                            ParseIssues.Add(item: new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = currentRange.End });
+                            ParseIssues.Add(item: new ParseIssue { issue = "Unhandled Tag " + thisNode.Name, location = getCurrentCursorPosition() });
                             break;
                     }
                     break;
@@ -290,16 +343,19 @@ namespace PatientEducationAssembler
                     break;
 
                 default:
-                    ParseIssues.Add(new ParseIssue { issue = "Unhandled Node Type " + thisNode.NodeType, location = currentRange.End });
+                    ParseIssues.Add(new ParseIssue { issue = "Unhandled Node Type " + thisNode.NodeType, location = getCurrentCursorPosition() });
                     break;
             }
 
-            foreach (HtmlNode childNode in thisNode.ChildNodes)
+            if (!skipChildren)
             {
-                if (ignoreDiv && childNode.NodeType == HtmlNodeType.Element && childNode.Name == "div")
-                    continue;
+                foreach (HtmlNode childNode in thisNode.ChildNodes)
+                {
+                    if (ignoreDiv && childNode.NodeType == HtmlNodeType.Element && childNode.Name == "div")
+                        continue;
 
-                WalkNodes(childNode);
+                    WalkNodes(childNode);
+                }
             }
 
             // Close tag logic
@@ -342,11 +398,12 @@ namespace PatientEducationAssembler
                             if (latestBlockStart != -1 && strongStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 strongStart = latestBlockStart;
 
-                            boldRanges.Add(new Tuple<int, int>(strongStart, currentRange.End));
+                            //Console.WriteLine("Bold end: {0} (check end: {1})", currentRange.End, thisDoc.Paragraphs.Last.Range.End);
+                            boldRanges.Add(new Tuple<int, int>(strongStart, getCurrentCursorPosition()));
 
                             //strongRange.Font.Bold = 1;
                             if (inHighlight)
-                                highlightRanges.Add(new Tuple<int, int>(strongStart, currentRange.End));
+                                highlightRanges.Add(new Tuple<int, int>(strongStart, getCurrentCursorPosition()));
 
                             break;
 
@@ -355,10 +412,10 @@ namespace PatientEducationAssembler
                             if (latestBlockStart != -1 && emphasisStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 emphasisStart = latestBlockStart;
 
-                            emphasisRanges.Add(new Tuple<int, int>(emphasisStart, currentRange.End));
+                            emphasisRanges.Add(new Tuple<int, int>(emphasisStart, getCurrentCursorPosition()));
 
                             if (inHighlight)
-                                highlightRanges.Add(new Tuple<int, int>(emphasisStart, currentRange.End));
+                                highlightRanges.Add(new Tuple<int, int>(emphasisStart, getCurrentCursorPosition()));
 
                             break;
 
@@ -366,10 +423,10 @@ namespace PatientEducationAssembler
                             if (latestBlockStart != -1 && underlineStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 underlineStart = latestBlockStart;
 
-                            underlineRanges.Add(new Tuple<int, int>(underlineStart, currentRange.End));
+                            underlineRanges.Add(new Tuple<int, int>(underlineStart, getCurrentCursorPosition()));
 
                             if (inHighlight)
-                                highlightRanges.Add(new Tuple<int, int>(underlineStart, currentRange.End));
+                                highlightRanges.Add(new Tuple<int, int>(underlineStart, getCurrentCursorPosition()));
 
                             break;
 
@@ -377,20 +434,20 @@ namespace PatientEducationAssembler
                             if (latestBlockStart != -1 && subscriptStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 subscriptStart = latestBlockStart;
 
-                            subscriptRanges.Add(new Tuple<int, int>(subscriptStart, currentRange.End));
+                            subscriptRanges.Add(new Tuple<int, int>(subscriptStart, getCurrentCursorPosition()));
 
                             if (inHighlight)
-                                highlightRanges.Add(new Tuple<int, int>(subscriptStart, currentRange.End));
+                                highlightRanges.Add(new Tuple<int, int>(subscriptStart, getCurrentCursorPosition()));
                             break;
 
                         case "sup":
                             if (latestBlockStart != -1 && superscriptStart < latestBlockStart && latestBlockStart < currentRange.Start)
                                 superscriptStart = latestBlockStart;
 
-                            subscriptRanges.Add(new Tuple<int, int>(superscriptStart, currentRange.End));
+                            subscriptRanges.Add(new Tuple<int, int>(superscriptStart, getCurrentCursorPosition()));
 
                             if (inHighlight)
-                                highlightRanges.Add(new Tuple<int, int>(superscriptStart, currentRange.End));
+                                highlightRanges.Add(new Tuple<int, int>(superscriptStart, getCurrentCursorPosition()));
                             break;
 
                         default:

@@ -8,7 +8,7 @@
         <Image urlXPath="//img[@class = &quot;rch-logo&quot;]"/>
         <Title nodeXPath="//div[@id = 'rch-primary']//h1"/>
         <Content required="true" nodeXPath="//div[@class = &quot;widgetBody&quot;]/div"/>
-        <Content nodeXPath="//div[@id = 'ctl00_ctl00_plhContent_plhContentBody_cbKidsInfoDis']/p/span"/>
+        <Content nodeXPath="//div[@id = 'ctl00_ctl00_plhContent_plhContentBody_cbKidsInfoDis']"/>
       </Document>
     </Bundle>
   </ContentProvider>
