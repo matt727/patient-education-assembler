@@ -1170,7 +1170,12 @@ namespace PatientEducationAssembler
                         ")";
                     insertIssue.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
                     insertIssue.Parameters.Add("@issueloc", OleDbType.Double).Value = (double)issue.location;
-                    insertIssue.Parameters.Add("@issuedesc", OleDbType.VarChar, 255).Value = issue.issue.Substring(0, 254);
+                    String trimmedIssue = issue.issue;
+                    if (trimmedIssue.Length > 254)
+                    {
+                        trimmedIssue = trimmedIssue.Substring(0, 254);
+                    }
+                    insertIssue.Parameters.Add("@issuedesc", OleDbType.VarChar, 255).Value = trimmedIssue;
 
                     insertIssue.ExecuteNonQuery();
                 }
