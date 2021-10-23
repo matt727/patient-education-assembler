@@ -50,6 +50,7 @@ namespace PatientEducationAssembler
                 XElement top = specDoc.Element("CustomPatientEducation");
                 ProviderSpecification = top.Element("ContentProvider");
                 contentProviderName = ProviderSpecification.Attribute("name").Value.ToString();
+                TitlePostfix = " - " + ProviderSpecification.Attribute("postfix").Value;
 
                 string tempUri = ProviderSpecification.Attribute("url").Value.ToString();
                 contentProviderUrl = new Uri(tempUri);
@@ -102,7 +103,7 @@ namespace PatientEducationAssembler
 
                 //MessageBox.Show(indexDocument.json().ToString().Substring(0, 50));
 
-                ParseIndex(node, indexDocument.json(), node.Attribute("postfix").Value);
+                ParseIndex(node, indexDocument.json());
             }
             else
 			{
@@ -118,12 +119,12 @@ namespace PatientEducationAssembler
                     {
                         HTMLBase subIndex = new HTMLIndex(this, new Uri(bundleUrl, indexLink.GetAttributeValue("href", "")));
                         subIndex.retrieveAndParse();
-                        ParseIndex(node, subIndex.doc, node.Attribute("postfix").Value);
+                        ParseIndex(node, subIndex.doc);
                     }
                 }
                 else
                 {
-                    ParseIndex(node, indexDocument.doc, node.Attribute("postfix").Value);
+                    ParseIndex(node, indexDocument.doc);
                 }
             }
         }
@@ -133,7 +134,7 @@ namespace PatientEducationAssembler
         /// </summary>
         /// <param name="node">The content loading configuration, at the level of node "Document"</param>
         /// <param name="doc">The HTML node representing the index HTML document</param>
-        private void ParseIndex(XElement node, HtmlDocument doc, string bundlePostfix)
+        private void ParseIndex(XElement node, HtmlDocument doc)
         {
             foreach (XElement specDoc in node.Elements("Document"))
             {
@@ -143,7 +144,7 @@ namespace PatientEducationAssembler
                 {
                     MainWindow.thisWindow.IndexProgress.Maximum += docMatches.Count;
                     foreach (HtmlNode document in docMatches)
-                        LoadDocument(specDoc, document, bundlePostfix);
+                        LoadDocument(specDoc, document);
                 }
             }
         }
@@ -153,7 +154,7 @@ namespace PatientEducationAssembler
         /// </summary>
         /// <param name="node">The content loading configuration, at the level of node "Document"</param>
         /// <param name="doc">The HTML node representing the index HTML document</param>
-        private void ParseIndex(XElement node, JObject index, string bundlePostfix)
+        private void ParseIndex(XElement node, JObject index)
         {
             foreach (XElement specDoc in node.Elements("Document"))
             {
@@ -184,7 +185,7 @@ namespace PatientEducationAssembler
 
                         String title = doc.SelectToken(titlePath).Value<String>();
 
-                        LoadDocumentInternal(specDoc, bundlePostfix, link, title);
+                        LoadDocumentInternal(specDoc, link, title);
                     }
                 }
             }
@@ -195,7 +196,7 @@ namespace PatientEducationAssembler
         /// </summary>
         /// <param name="node">The content loading configuration, at the level of node "Document"</param>
         /// <param name="documentLink">The individual A-node which contains the href link</param>
-        private void LoadDocument(XElement node, HtmlNode documentLink, string bundlePostfix)
+        private void LoadDocument(XElement node, HtmlNode documentLink)
         {
             Uri link = new Uri(contentProviderUrl, documentLink.GetAttributeValue("href", ""));
 
@@ -219,22 +220,20 @@ namespace PatientEducationAssembler
                 }
             }
 
-            HTMLDocument thisPage = LoadDocumentInternal(node, bundlePostfix, link, title);
+            HTMLDocument thisPage = LoadDocumentInternal(node, link, title);
 
             if (synonym.Length > 0)
                 thisPage.AddSynonym(synonym);
         }
 
-        private HTMLDocument LoadDocumentInternal(XElement node, string bundlePostfix, Uri link, string title)
+        private HTMLDocument LoadDocumentInternal(XElement node, Uri link, string title)
         {
-            // Postfix the bundle tag to the document title
-            title += " - " + bundlePostfix;
-
             HTMLDocument thisPage;
             if (!EducationDatabase.Self().EducationObjects.ContainsKey(HTMLDocument.URLForDictionary(link)))
             {
                 thisPage = new HTMLDocument(this, node, link);
-                thisPage.Title = title;
+                // Postfix the content provider tag to the document title
+                thisPage.Title = title + TitlePostfix;
 
                 if (currentLoadDepth == LoadDepth.OneDocument)
                 {

@@ -75,6 +75,8 @@ namespace PatientEducationAssembler
                         {
                             Title = ConvertHtmlText(titleNode.InnerText);
                             AddHeading(Title, "Heading 1");
+                            // Add the provider postfix eg. - Royal Children's Hospital, for display of the document title in EMR
+                            Title += ParentProvider.TitlePostfix;
                         }
                         break;
 

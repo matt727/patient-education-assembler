@@ -16,6 +16,7 @@ namespace PatientEducationAssembler
         protected int loadCount { get; set; }
 
         public DateTime LastSpecificationUpdate { get; private set; }
+        public string TitlePostfix { get; internal set; }
 
         public PatientEducationProvider(Uri sourceXMLFile)
         {

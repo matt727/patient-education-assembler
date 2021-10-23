@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <CustomPatientEducation>
-  <ContentProvider name="Department of Health and Human Services" url="https://www.betterhealth.vic.gov.au">
+  <ContentProvider name="Department of Health and Human Services" postfix="Better Health Channel" url="https://www.betterhealth.vic.gov.au">
     <Bundle name="Better Health Channel"
-            postfix = "Better Health Channel"
             indexType="JSON"
 			url="https://82fd82a8a6a68c599eb4e2cc2d6c49a5.elastic.sdp1.sdp.vic.gov.au/elasticsearch_index_drupal_node/_search?from=0&amp;size=5000&amp;filter_path=hits.hits%2Chits.total%2Caggregations&amp;_source=field_summary%2Cfield_node_primary_site%2Ctitle%2Ctitle_az%2Ctype%2Curl%2Cuuid%2Cimage_url%2Cimage_alt%2Ccreated%2Cchanged%2Cfield_date_last_reviewed">
         <!-- Qualify for ConditionsAndTreatments documents only-->

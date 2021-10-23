@@ -1199,6 +1199,25 @@ namespace PatientEducationAssembler
                         "FileName = @fn, Doc_Lang_ID = @doclang, Document_Name = @title, Language_ID = @lang, " +
                         "GenderID = @gender, AgeID = @age, URL = @url " +
                         "WHERE Doc_ID = @doc";
+
+                    // Check that all documents are in DocCat when they should be
+                    // This code is only required when something is out of sync...
+                    /*
+                    bool correctCat = false;
+                    OleDbCommand docCheck = conn.CreateCommand();
+                    docCheck.CommandText = "SELECT COUNT(*) FROM [DocCat] WHERE [Doc_ID] = @doc";
+                    docCheck.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
+                    OleDbDataReader result = docCheck.ExecuteReader();
+                    result.Read();
+                    correctCat = result.GetInt32(0) > 0;
+                    result.Close();
+
+                    if (!correctCat)
+                    {
+                        // Not in the main tables, insert it
+                        docCat.CommandText = "INSERT INTO DocCat (Doc_ID, CategoryID) " +
+                            "VALUES (@doc, @cat)";
+                    }*/
                 }
                 else if (!inDB && Enabled)
                 {
