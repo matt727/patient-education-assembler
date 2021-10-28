@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -231,20 +231,23 @@ namespace PatientEducationAssembler
 
         private void currrentProviderChanged()
         {
-            CurrentContentProviderName.Text = EducationDatabase.Self().CurrentProvider.contentProviderName;
-            SpecificationXML.Text = EducationDatabase.Self().CurrentProvider.GetSpecification();
-            ReloadContentSpec.IsEnabled = true;
-            ButtonLoadIndex.IsEnabled = true;
-            ButtonParseOne.IsEnabled = true;
-            StartThisButton.IsEnabled = true;
-            StartAllButton.IsEnabled = true;
+            if (EducationDatabase.Self().CurrentProvider != null)
+            {
+                CurrentContentProviderName.Text = EducationDatabase.Self().CurrentProvider.contentProviderName;
+                SpecificationXML.Text = EducationDatabase.Self().CurrentProvider.GetSpecification();
+                ReloadContentSpec.IsEnabled = true;
+                ButtonLoadIndex.IsEnabled = true;
+                ButtonParseOne.IsEnabled = true;
+                StartThisButton.IsEnabled = true;
+                StartAllButton.IsEnabled = true;
 
-            //dv = new System.Data.DataView(HTMLContentProvider.getEducationCollection(), "");
-            //EducationItemsDataGrid.
+                //dv = new System.Data.DataView(HTMLContentProvider.getEducationCollection(), "");
+                //EducationItemsDataGrid.
 
-            //DataView dv;
-            //dv = new DataView(ds.Tables[0], "type = 'business' ", "type Desc", DataViewRowState.CurrentRows);
-            //dataGridView1.DataSource = dv;
+                //DataView dv;
+                //dv = new DataView(ds.Tables[0], "type = 'business' ", "type Desc", DataViewRowState.CurrentRows);
+                //dataGridView1.DataSource = dv;
+            }
         }
 
         private void StartThisButton_Click(object sender, RoutedEventArgs e)
@@ -411,7 +414,10 @@ namespace PatientEducationAssembler
 		{
             ScrollResponse response = JsonConvert.DeserializeObject<ScrollResponse>(e.WebMessageAsJson);
             //MessageBox.Show("Scrolling to " + response.ScrollPos);
-            currentReviewDocument.ScrollTo(response.ScrollPos);
+            if (currentReviewDocument != null)
+            {
+                currentReviewDocument.ScrollTo(response.ScrollPos);
+            }
         }
 
 		private void NextDocument_Click(object sender, RoutedEventArgs e)

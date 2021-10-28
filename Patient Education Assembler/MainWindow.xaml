@@ -14,7 +14,7 @@
 			<Label Width="100" VerticalAlignment="Center" Content="Content _Provider:  "/>
 
 			<Button x:Name="PrevContentProvider" Content="&lt;&lt;" Height="23" VerticalAlignment="Center" Width="51" Click="PrevContentProvider_Click"/>
-			<TextBox x:Name="CurrentContentProviderName" Height="23" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Width="218" FontWeight="Bold" Foreground="#FF204AEB" TextAlignment="Center"/>
+            <TextBox x:Name="CurrentContentProviderName" Height="23" TextWrapping="Wrap" Text="" VerticalAlignment="Center" Width="218" FontWeight="Bold" Foreground="#FF204AEB" TextAlignment="Center" IsReadOnly = "True"/>
 			<Button x:Name="NextContentProvider" Content="&gt;&gt;" Height="23" VerticalAlignment="Center" Width="51" Click="NextContentProvider_Click"/>
 			<Separator Margin="0" Width="20"/>
 			<Button x:Name="OpenContentProvider" Content="Open" Width="75" Height="23" Click="OpenContentProvider_Click"/>

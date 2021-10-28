@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -761,10 +761,19 @@ namespace PatientEducationAssembler
 
                 // Thread protect saving and closing
                 wordLock.EnterWriteLock();
-                
-                thisDoc.SaveAs2(rtfFileName(), Word.WdSaveFormat.wdFormatRTF);
-                if (closeDocs)
-                    thisDoc.Close();
+
+                try
+                {
+                    thisDoc.SaveAs2(rtfFileName(), Word.WdSaveFormat.wdFormatRTF);
+
+                    if (closeDocs)
+                        thisDoc.Close();
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    System.Windows.Forms.MessageBox.Show("Word cannot save this file because it is already open elsewhere: " + rtfFileName());
+                }
+
                 thisDoc = null;
                 currentRange = null;
             }

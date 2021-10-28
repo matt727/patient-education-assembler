@@ -126,30 +126,43 @@ namespace PatientEducationAssembler
   
         public void addContentProvider(String providerName, HTMLContentProvider htmlContentProvider)
         {
-            contentProviders.Add(providerName, htmlContentProvider);
-            if (CurrentProvider == null)
-                CurrentProvider = htmlContentProvider;
+            try
+            {
+                contentProviders.Add(providerName, htmlContentProvider);
+                if (CurrentProvider == null)
+                    CurrentProvider = htmlContentProvider;
+                }
+            catch (System.ArgumentException)
+            {
+                MessageBox.Show("Content Provider already loaded");
+            }
         }
 
         public HTMLContentProvider CurrentProvider { get; private set; }
         public HTMLContentProvider nextProvider()
         {
-            var IndexOfKey = contentProviders.IndexOfKey(CurrentProvider.contentProviderName);
-            IndexOfKey++; //Handle last index case
-            if (IndexOfKey >= contentProviders.Count)
-                IndexOfKey = 0;
-            CurrentProvider = contentProviders.Values[IndexOfKey];
+            if (CurrentProvider != null)
+            {
+                var IndexOfKey = contentProviders.IndexOfKey(CurrentProvider.contentProviderName);
+                IndexOfKey++; //Handle last index case
+                if (IndexOfKey >= contentProviders.Count)
+                    IndexOfKey = 0;
+                CurrentProvider = contentProviders.Values[IndexOfKey];
+            }
             return CurrentProvider;
         }
 
         public HTMLContentProvider prevProvider()
         {
-            var IndexOfKey = contentProviders.IndexOfKey(CurrentProvider.contentProviderName);
-            if (IndexOfKey == 0)
-                IndexOfKey = contentProviders.Count - 1;
-            else
-                IndexOfKey--;
-            CurrentProvider = contentProviders.Values[IndexOfKey];
+            if (CurrentProvider != null)
+            {
+                var IndexOfKey = contentProviders.IndexOfKey(CurrentProvider.contentProviderName);
+                if (IndexOfKey == 0)
+                    IndexOfKey = contentProviders.Count - 1;
+                else
+                    IndexOfKey--;
+                CurrentProvider = contentProviders.Values[IndexOfKey];
+            }
             return CurrentProvider;
         }
 
