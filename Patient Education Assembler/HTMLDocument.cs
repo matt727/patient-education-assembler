@@ -286,11 +286,11 @@ namespace PatientEducationAssembler
                             break;
                         case "iframe":
                             // YouTube embed code
-                            Regex youTubeEmbedRx = new Regex(@"youtube\.com\/embed\/(?<ytCode>\w+)\?",
+                            Regex youTubeEmbedRx = new Regex(@"youtube\.com\/embed\/(?<ytCode>[\w-]+)",
                                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
                             // Vimeo embed code
-                            Regex vimeoEmbedRx = new Regex(@"player.vimeo\.com\/video\/(?<vimeoCode>\w+)\?",
+                            Regex vimeoEmbedRx = new Regex(@"player\.vimeo\.com\/video\/(?<vimeoCode>\w+)",
                                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
                             // Try to detect embedded youtube video
