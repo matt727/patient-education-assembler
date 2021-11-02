@@ -1,16 +1,25 @@
-﻿<Window
+<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PatientEducationAssembler" 
 		xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+		xmlns:sys="clr-namespace:System;assembly=mscorlib"
 		x:Class="PatientEducationAssembler.MainWindow"
         mc:Ignorable="d"
         Title="Patient Education Assembler" Height="707.059" Width="920.311">
 
-	<DockPanel>
-		<StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Height="40" VerticalAlignment="Center">
+    <Window.Resources>
+        <x:Array x:Key="GenderOptions" Type="sys:String">
+            <sys:String>Both</sys:String>
+            <sys:String>Male Only</sys:String>
+            <sys:String>Female Only</sys:String>
+        </x:Array>
+    </Window.Resources>
+
+    <DockPanel>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Height="40" VerticalAlignment="Center">
 			<Label Width="100" VerticalAlignment="Center" Content="Content _Provider:  "/>
 
 			<Button x:Name="PrevContentProvider" Content="&lt;&lt;" Height="23" VerticalAlignment="Center" Width="51" Click="PrevContentProvider_Click"/>
@@ -129,39 +138,51 @@
 				</DockPanel>
 			</TabItem>
 			<TabItem Header="Education Items">
-				<DockPanel>
-					<StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-						<Button x:Name="ResolveIndexDiscrepanciesButton" Content="Resolve Index Discrepancies"/>
+                <DockPanel>
+                    <StackPanel Orientation="Vertical" DockPanel.Dock="Top" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
+                            <Button x:Name="ResolveIndexDiscrepanciesButton" Content="Resolve Index Discrepancies"/>
 
 
-						<Separator Width="20" RenderTransformOrigin="-11.95,0.375"/>
+                            <Separator Width="20" RenderTransformOrigin="-11.95,0.375"/>
 
 
-						<Button IsEnabled="False" Content="Next Requiring Review"/>
-						<Separator Width="20"/>
-						<Button IsEnabled="False" Content="Review"/>
+                            <Button IsEnabled="False" Content="Next Requiring Review"/>
+                            <Separator Width="20"/>
+                            <Button IsEnabled="False" Content="Review"/>
 
-						<Separator Width="20"/>
-						<Button IsEnabled="False" Content="Reload"/>
-						<Separator Width="20"/>
-						<Button x:Name="IncludeAllAvailable" Content="Include All Available" Width="115" Click="IncludeAllAvailable_Click"/>
+                            <Separator Width="20"/>
+                            <Button IsEnabled="False" Content="Reload"/>
 
+                            <Separator Width="20"/>
+                            <Button x:Name="IncludeAllAvailable" Content="Include All Available" Width="115" Click="IncludeAllAvailable_Click"/>
 
-					</StackPanel>
-					<DataGrid x:Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" MouseDoubleClick="EducationItemsDataGrid_MouseDoubleClick">
-						<DataGrid.Columns>
-							<DataGridCheckBoxColumn Binding="{Binding Enabled}" ClipboardContentBinding="{x:Null}" Header="Included"/>
-							<DataGridTextColumn Binding="{Binding Status}" ClipboardContentBinding="{x:Null}" Header="Status" IsReadOnly="True"/>
-							<DataGridTextColumn Binding="{Binding ReviewStatus}" ClipboardContentBinding="{x:Null}" Header="Reviewed?" IsReadOnly="True"/>
-							<DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Title"/>
-							<DataGridHyperlinkColumn Binding="{Binding URL}" ContentBinding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="URL"/>
-							<DataGridComboBoxColumn ClipboardContentBinding="{x:Null}" Header="Table Option" SelectedValueBinding="{x:Null}" SelectedItemBinding="{x:Null}" TextBinding="{x:Null}" IsReadOnly="True"/>
-							<DataGridTextColumn Binding="{Binding CacheDate}" ClipboardContentBinding="{x:Null}" Header="Cache Date" IsReadOnly="True"/>
-							<DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Header="Last Updated" IsReadOnly="True"/>
-							<DataGridTextColumn Binding="{Binding ParseIssueCount}" ClipboardContentBinding="{x:Null}" Header="Issue Count" IsReadOnly="True"/>
-						</DataGrid.Columns>
-					</DataGrid>
-				</DockPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
+                            <Button Content="Update Selected Rows" Click="UpdateSelectedRows_Click" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <DataGrid x:Name="EducationItemsDataGrid"  HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" Padding="5" Margin="0,1.8,0,0" MouseDoubleClick="EducationItemsDataGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Binding="{Binding Enabled}" ClipboardContentBinding="{x:Null}" Header="Included"/>
+                            <DataGridTextColumn Binding="{Binding Status}" ClipboardContentBinding="{x:Null}" Header="Status" IsReadOnly="True"/>
+                            <DataGridTextColumn Binding="{Binding ReviewStatus}" ClipboardContentBinding="{x:Null}" Header="Reviewed?" IsReadOnly="True"/>
+                            <DataGridTextColumn Binding="{Binding Title}" ClipboardContentBinding="{x:Null}" Header="Title"/>
+                            <DataGridHyperlinkColumn Binding="{Binding URL}" ContentBinding="{x:Null}" ClipboardContentBinding="{x:Null}" Header="URL"/>
+                            <DataGridComboBoxColumn ClipboardContentBinding="{x:Null}" Header="Table Option" SelectedValueBinding="{x:Null}" SelectedItemBinding="{x:Null}" TextBinding="{x:Null}" IsReadOnly="True"/>
+                            <DataGridTextColumn Binding="{Binding CacheDate}" ClipboardContentBinding="{x:Null}" Header="Cache Date" IsReadOnly="True"/>
+                            <DataGridTemplateColumn ClipboardContentBinding="{x:Null}" Header="Last Updated" IsReadOnly="True"/>
+                            <DataGridTextColumn Binding="{Binding ParseIssueCount}" ClipboardContentBinding="{x:Null}" Header="Issue Count" IsReadOnly="True"/>
+                            <DataGridComboBoxColumn Header="Applicable Gender" ItemsSource="{Binding Source={StaticResource GenderOptions}}" SelectedItemBinding="{Binding GenderString}">
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <EventSetter Event="SelectionChanged" Handler="GenderComboBox_SelectionChanged" />
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
 			</TabItem>
 			<TabItem x:Name="SingleItemTab" Header="Single Item">
 				<DockPanel>

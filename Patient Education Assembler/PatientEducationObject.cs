@@ -153,6 +153,7 @@ namespace PatientEducationAssembler
 
         private string FileName;
         public string Title { get; set; }
+        public string GenderString { get; set; }
         public bool Enabled { get; set; }
 
         public string CacheDate {
@@ -285,6 +286,37 @@ namespace PatientEducationAssembler
             }
         }
 
+        public void UpdateDatabaseGender(String newGenderString)
+        {
+            if (newGenderString != GenderString)
+            {
+                int newGenderID = -1;
+
+                if (newGenderString == "Male Only")
+                {
+                    newGenderID = 0;
+                }
+                else if (newGenderString == "Female Only")
+                {
+                    newGenderID = 1;
+                }
+
+                OleDbCommand metaData = EducationDatabase.conn.CreateCommand();
+                {
+                    metaData.CommandText = "UPDATE [DocumentAssemblerMetadata] SET " +
+                            "[GenderID] = @gender " +
+                            "WHERE [Doc_ID] = @doc";
+
+                    metaData.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)newGenderID;
+
+                    // Must be last
+                    metaData.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
+
+                    metaData.ExecuteNonQuery();
+                }
+            }
+        }
+
         private DateTime lastParse;
         public DateTime LastParse {
             get {
@@ -371,6 +403,7 @@ namespace PatientEducationAssembler
             CategoryID = 1;
             DocLangID = 1; // English (default) TODO support other languages
             DocID = -1;
+            GenderString = "Both";
 
             URL = url;
 
@@ -403,6 +436,7 @@ namespace PatientEducationAssembler
             CategoryID = 1;
             DocLangID = 1; // English (default) TODO support other languages
             DocID = -1;
+            GenderString = "Both";
 
             if (thisGuid == Guid.Empty)
                 thisGuid = Guid.NewGuid();
@@ -433,6 +467,22 @@ namespace PatientEducationAssembler
             DocID = (int)reader.GetDouble((int)EducationDatabase.MetadataColumns.Doc_ID);
             Title = reader.GetString((int)EducationDatabase.MetadataColumns.Document_Name);
             Enabled = reader.GetBoolean((int)EducationDatabase.MetadataColumns.Enabled);
+            int GenderID = reader.GetInt32((int)EducationDatabase.MetadataColumns.GenderID);
+            switch (GenderID)
+            {
+                case -1:
+                    GenderString = "Both";
+                    break;
+                case 0:
+                    GenderString = "Male Only";
+                    break;
+                case 1:
+                    GenderString = "Female Only";
+                    break;
+                default:
+                    GenderString = "Both";
+                    break;
+            }
 
             URL = new Uri(reader.GetString((int)EducationDatabase.MetadataColumns.URL));
 
@@ -1127,7 +1177,25 @@ namespace PatientEducationAssembler
                 metaData.Parameters.Add("@doclang", OleDbType.Double).Value = (double)DocLangID;
                 metaData.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
                 metaData.Parameters.Add("@lang", OleDbType.Double).Value = (double)LanguageID;
-                metaData.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
+
+                int newGenderID = -1;
+                switch (GenderString)
+                {
+                    case "Both":
+                        newGenderID = -1;
+                        break;
+                    case "Male Only":
+                        newGenderID = 0;
+                        break;
+                    case "Female Only":
+                        newGenderID = 1;
+                        break;
+                    default:
+                        newGenderID = -1;
+                        break;
+                }
+
+                metaData.Parameters.Add("@gender", OleDbType.Double).Value = (double)newGenderID;
                 metaData.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
                 metaData.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
                 metaData.Parameters.Add("@enabled", OleDbType.Boolean).Value = Enabled;
@@ -1266,7 +1334,7 @@ namespace PatientEducationAssembler
                     docTrans.Parameters.Add("@doclang", OleDbType.Double).Value = (double)DocLangID;
                     docTrans.Parameters.Add("@title", OleDbType.VarChar, 255).Value = Title;
                     docTrans.Parameters.Add("@lang", OleDbType.Double).Value = (double)LanguageID;
-                    docTrans.Parameters.Add("@gender", OleDbType.BigInt).Value = (long)-1;
+                    docTrans.Parameters.Add("@gender", OleDbType.Double).Value = (double)newGenderID;
                     docTrans.Parameters.Add("@age", OleDbType.BigInt).Value = (long)-1;
                     docTrans.Parameters.Add("@url", OleDbType.VarChar, 255).Value = URL.ToString();
                     docTrans.Parameters.Add("@doc", OleDbType.Double).Value = (double)DocID;
@@ -1280,6 +1348,18 @@ namespace PatientEducationAssembler
             }
 
 
+        }
+
+        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
+        {
+            if (!Equals(field, newValue))
+            {
+                field = newValue;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                return true;
+            }
+
+            return false;
         }
     }
 }

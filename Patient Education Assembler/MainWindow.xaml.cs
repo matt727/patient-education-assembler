@@ -322,6 +322,20 @@ namespace PatientEducationAssembler
             }
         }
 
+        private void GenderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = sender as ComboBox;
+            String selectedGender = comboBox.SelectedItem.ToString();
+            PatientEducationObject selected = (HTMLDocument)EducationItemsDataGrid.SelectedItem;
+            selected.UpdateDatabaseGender(selectedGender);
+        }
+        private void UpdateSelectedRows_Click(object sender, RoutedEventArgs e)
+        {
+            EducationItemEditor editor = new EducationItemEditor();
+            editor.InitialiseVariables(this);
+            editor.Show();
+        }
+
         internal void SelectItem(PatientEducationObject item)
 		{
             {

@@ -92,6 +92,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="EducationItemEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -104,6 +108,9 @@
       <DependentUpon>DiscrepancyTool.xaml</DependentUpon>
     </Compile>
     <Compile Include="EducationDatabase.cs" />
+    <Compile Include="EducationItemEditor.xaml.cs">
+      <DependentUpon>EducationItemEditor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="HTMLBase.cs" />
     <Compile Include="HTMLContentProvider.cs" />
     <Compile Include="HTMLDocument.cs" />
